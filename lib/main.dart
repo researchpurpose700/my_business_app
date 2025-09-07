@@ -117,18 +117,7 @@ class _MyAppState extends State<MyApp> {
                 print('MAIN: switching to MainScreen'); // DEBUG log
 
                 if (!mounted) return;
-                setState(
-                  () => _flowState = AppFlowState.main,
-                ); // state-machine swap
-
-                // Fallback nav to cover edge cases where rebuild is deferred
-                Future.microtask(() {
-                  if (!mounted) return;
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (_) => const MainScreen()),
-                    (_) => false,
-                  );
-                });
+                setState(() => _flowState = AppFlowState.main);
               },
             );
 

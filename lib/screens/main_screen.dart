@@ -17,7 +17,7 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _pages = <Widget>[
   const HomePage(),
   const OrderPage(),
-  const ListingPage(),
+  const listingPage(),
   const ProfileScreen(), // <-- this must match the class name in profile_page.dart
 ];
 

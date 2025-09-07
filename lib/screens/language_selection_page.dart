@@ -69,26 +69,9 @@ class LanguageSelectionPage extends StatelessWidget {
                     final lang = languages[index];
                     return InkWell(
                       onTap: () {
-                        // 1. Update locale
+                        // Update locale and let MyApp's state machine show the next screen
+                        // Avoid manual navigation here to prevent double navigations
                         onLanguageSelected(lang['code']!);
-
-                        // 2. Navigate to BusinessRegistrationPage
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => BusinessRegistrationPage(
-                              onFinished: () {
-                                // After registration finished, go to MainScreen
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const MainScreen(),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        );
                       },
 
                       borderRadius: BorderRadius.circular(12),

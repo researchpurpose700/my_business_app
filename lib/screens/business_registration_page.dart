@@ -105,7 +105,7 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
       );
 
       print('BRP: onFinished() called'); // DEBUG
-      widget.onFinished();
+      widget.onFinished(); // This calls the navigation to next step
     }
   }
 
@@ -224,24 +224,24 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
 
                         // Services Dropdown
                         DropdownButtonFormField<String>(
-                          initialValue: _selectedService,
+                          value: _selectedService, // Changed from initialValue to value
                           hint: Text(
                             AppLocalizations.of(context)!.selectYourCategory,
                           ),
                           items: services
                               .map(
                                 (s) => DropdownMenuItem(
-                                  value: s,
-                                  child: Text(_getServiceLabel(context, s)),
-                                ),
-                              )
+                              value: s,
+                              child: Text(_getServiceLabel(context, s)),
+                            ),
+                          )
                               .toList(),
                           onChanged: (val) =>
                               setState(() => _selectedService = val),
                           validator: (val) => val == null
                               ? AppLocalizations.of(
-                                  context,
-                                )!.pleaseSelectAService
+                            context,
+                          )!.pleaseSelectAService
                               : null,
                           decoration: InputDecoration(
                             contentPadding: const EdgeInsets.symmetric(
@@ -263,14 +263,14 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
                             SizedBox(
                               width: 80,
                               child: DropdownButtonFormField<String>(
-                                initialValue: _countryCode,
+                                value: _countryCode, // Changed from initialValue to value
                                 items: ['+91', '+1', '+44']
                                     .map(
                                       (c) => DropdownMenuItem(
-                                        value: c,
-                                        child: Text(c),
-                                      ),
-                                    )
+                                    value: c,
+                                    child: Text(c),
+                                  ),
+                                )
                                     .toList(),
                                 onChanged: (val) =>
                                     setState(() => _countryCode = val!),
@@ -299,8 +299,8 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
                                 ],
                                 validator: (val) => val!.length != 10
                                     ? AppLocalizations.of(
-                                        context,
-                                      )!.enter10DigitMobile
+                                  context,
+                                )!.enter10DigitMobile
                                     : null,
                                 onChanged: (val) {
                                   if (val.length == 10 && !_isOtpSent) {
@@ -352,8 +352,8 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
                                 ],
                                 validator: (val) => val!.length != 6
                                     ? AppLocalizations.of(
-                                        context,
-                                      )!.enter6DigitOtp
+                                  context,
+                                )!.enter6DigitOtp
                                     : null,
                                 decoration: InputDecoration(
                                   labelText: '- - - - - -',
@@ -372,13 +372,13 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
                                 child: Text(
                                   !_isOtpSent
                                       ? AppLocalizations.of(
-                                          context,
-                                        )!.didntReceiveSendOtp
+                                    context,
+                                  )!.didntReceiveSendOtp
                                       : (_resendIn > 0
-                                            ? 'Resend in ${_resendIn}s'
-                                            : AppLocalizations.of(
-                                                context,
-                                              )!.resendOtp),
+                                      ? 'Resend in ${_resendIn}s'
+                                      : AppLocalizations.of(
+                                    context,
+                                  )!.resendOtp),
                                   style: TextStyle(
                                     color: (_isOtpSent && _resendIn > 0)
                                         ? Colors.grey
@@ -404,18 +404,18 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
                           ),
                           child: _isLoading
                               ? const CircularProgressIndicator(
-                                  color: Colors.white,
-                                )
+                            color: Colors.white,
+                          )
                               : Text(
-                                  AppLocalizations.of(
-                                    context,
-                                  )!.createAccount.toUpperCase(),
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
+                            AppLocalizations.of(
+                              context,
+                            )!.createAccount.toUpperCase(),
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
                         ),
                         const SizedBox(height: 12),
 
