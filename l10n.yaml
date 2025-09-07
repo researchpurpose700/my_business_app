@@ -1,0 +1,19 @@
+# l10n.yaml - place this at the root of your Flutter project (next to pubspec.yaml)
+
+arb-dir: lib/core/language/l10n
+template-arb-file: app_en.arb
+output-dir: lib/generated
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations
+
+# Preferred locales for your app
+preferred-supported-locales:
+  - en
+  - hi
+  - pa
+
+
+
+# Optional settings you can enable later if needed:
+# untranslated-messages-file: lib/core/localization/l10n/untranslated_messages.json
+# nullable-getter: false

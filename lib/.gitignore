@@ -1,0 +1,22 @@
+# Flutter / Dart
+.dart_tool/
+.packages
+.pub/
+.pub-cache/
+.build/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.generated/
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.DS_Store
+ios/Pods/
+android/.gradle/
+android/app/*.keystore
+*.keystore
+*.jks
+*.log
