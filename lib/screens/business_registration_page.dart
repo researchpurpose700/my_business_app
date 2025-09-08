@@ -69,9 +69,9 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
     if (jsonMap != null) {
       _fullNameController.text = jsonMap['fullName'] ?? '';
       _shopNameController.text = jsonMap['shopName'] ?? '';
-      _mobileController.text   = jsonMap['mobile'] ?? '';
-      _countryCode             = jsonMap['countryCode'] ?? '+91';
-      _selectedService         = jsonMap['service'];
+      _mobileController.text = jsonMap['mobile'] ?? '';
+      _countryCode = jsonMap['countryCode'] ?? '+91';
+      _selectedService = jsonMap['service'];
       setState(() {});
     }
   }
@@ -79,21 +79,27 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
 
   void _sendOtp({bool fromAuto = false}) {
     final phone = _mobileController.text.trim();
-    if (phone.length != 10) {
+    final pattern = RegExp(r'^[6-9]\d{9}$');
+
+    if (!pattern.hasMatch(phone)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.pleaseEnterMobileNumberFirst)),
+        const SnackBar(content: Text("Enter a valid 10-digit mobile starting with 6,7,8,9")),
       );
       return;
     }
+
     if (fromAuto && _isOtpSent) return;
+
     if (_resendIn > 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Please wait $_resendIn s to resend OTP')),
       );
       return;
     }
+
     setState(() => _isOtpSent = true);
     _startCooldown();
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(AppLocalizations.of(context)!.otpSentToYourMobileNumber)),
     );
@@ -233,11 +239,19 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
                                   FilteringTextInputFormatter.digitsOnly,
                                   LengthLimitingTextInputFormatter(10),
                                 ],
-                                validator: (val) => val!.length != 10
-                                    ? AppLocalizations.of(context)!.enter10DigitMobile
-                                    : null,
+                                validator: (val) {
+                                  if (val == null || val.isEmpty) {
+                                    return AppLocalizations.of(context)!.enter10DigitMobile;
+                                  }
+                                  final pattern = RegExp(r'^[6-9]\d{9}$');
+                                  if (!pattern.hasMatch(val)) {
+                                    return "Mobile must start with 6,7,8,9 and be 10 digits";
+                                  }
+                                  return null;
+                                },
                                 onChanged: (val) {
-                                  if (val.length == 10 && !_isOtpSent) {
+                                  final pattern = RegExp(r'^[6-9]\d{9}$');
+                                  if (pattern.hasMatch(val) && !_isOtpSent) {
                                     _sendOtp(fromAuto: true);
                                   }
                                 },
