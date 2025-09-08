@@ -21,6 +21,7 @@ dependencies:
   dotted_border: ^2.0.0
   permission_handler: ^11.0.0
   uuid: ^3.0.6
+
   
   
   flutter_localizations:

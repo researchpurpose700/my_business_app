@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart';
+import 'dart:io';
+import 'package:my_business_app/config/save_data.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -10,11 +14,115 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   bool isOpen = true;
   String timings = '10:00 AM – 9:00 PM';
+  bool _isLoading = true; // Add loading state
 
-  String _shopName = 'Tech Haven Electronics';
-  String _phoneNumber = '+91 98765 43210';
-  String _address = '456 Innovation Drive, Pune';
-  String? _coverImageUrl; // null => gradient only
+// Remove default values - will be loaded from JSON
+  String _shopName = '';
+  String _phoneNumber = '';
+  String _address = '';
+
+// Image handling
+  File? _coverImage;
+  File? _profileImage;
+  final ImagePicker _picker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFromStorage();
+  }
+
+  Future<void> _loadFromStorage() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final json = await LocalStorage.loadProfile();
+
+      if (json != null && mounted) {
+        setState(() {
+          // Load shop name
+          _shopName = (json['shopName']?.toString() ?? '').trim();
+          if (_shopName.isEmpty) _shopName = 'Your Shop Name'; // Fallback
+
+          // Load phone number
+          _phoneNumber = (json['mobile']?.toString() ?? '').trim();
+          if (_phoneNumber.isEmpty) _phoneNumber = '+91 00000 00000'; // Fallback
+
+          // Load address
+          _address = (json['address']?.toString() ?? '').trim();
+          if (_address.isEmpty) _address = 'Add your shop address'; // Fallback
+
+          // Load timings
+          final savedTimings = (json['timings']?.toString() ?? '').trim();
+          if (savedTimings.isNotEmpty) timings = savedTimings;
+
+          // Load open/closed status
+          isOpen = (json['isOpen'] as bool?) ?? true;
+
+          // Load images
+          final coverPath = json['coverImage'] as String?;
+          final profilePath = json['profileImage'] as String?;
+
+          if (coverPath != null && coverPath.isNotEmpty) {
+            final coverFile = File(coverPath);
+            if (coverFile.existsSync()) _coverImage = coverFile;
+          }
+
+          if (profilePath != null && profilePath.isNotEmpty) {
+            final profileFile = File(profilePath);
+            if (profileFile.existsSync()) _profileImage = profileFile;
+          }
+        });
+      } else {
+        // Set default values if no data found
+        setState(() {
+          _shopName = 'Your Shop Name';
+          _phoneNumber = '+91 00000 00000';
+          _address = 'Add your shop address';
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading profile: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        // Set fallback values on error
+        setState(() {
+          _shopName = 'Your Shop Name';
+          _phoneNumber = '+91 00000 00000';
+          _address = 'Add your shop address';
+        });
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _persistToStorage() async {
+    try {
+      await LocalStorage.upsertProfile({
+        'shopName': _shopName,
+        'address': _address,
+        'mobile': _phoneNumber,
+        'timings': timings,
+        'isOpen': isOpen,
+        'coverImage': _coverImage?.path,
+        'profileImage': _profileImage?.path,
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error saving profile: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   void _pushFull(Widget page) {
     Navigator.of(context).push(
@@ -37,6 +145,149 @@ class _ProfileScreenState extends State<ProfileScreen> {
         },
       ),
     );
+  }
+
+
+// Image selection methods
+  Future<void> _pickCoverImage() async {
+    await _showImageSourceDialog(true);
+  }
+
+  Future<void> _pickProfileImage() async {
+    await _showImageSourceDialog(false);
+  }
+
+  Future<void> _showImageSourceDialog(bool isCoverImage) async {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_camera),
+              title: const Text('Camera'),
+              onTap: () {
+                Navigator.pop(context);
+                _selectImage(ImageSource.camera, isCoverImage);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Gallery'),
+              onTap: () {
+                Navigator.pop(context);
+                _selectImage(ImageSource.gallery, isCoverImage);
+              },
+            ),
+            if ((isCoverImage && _coverImage != null) ||
+                (!isCoverImage && _profileImage != null))
+              ListTile(
+                leading: const Icon(Icons.delete),
+                title: const Text('Remove Image'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  setState(() {
+                    if (isCoverImage) {
+                      _coverImage = null;
+                    } else {
+                      _profileImage = null;
+                    }
+                  });
+                  await _persistToStorage();
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _selectImage(ImageSource source, bool isCoverImage) async {
+    try {
+      final XFile? pickedFile = await _picker.pickImage(
+        source: source,
+        maxWidth: isCoverImage ? 1200 : 800,
+        maxHeight: isCoverImage ? 800 : 800,
+        imageQuality: 85,
+      );
+
+      if (pickedFile != null) {
+        // Automatically crop the selected image
+        final croppedFile = await _cropImage(pickedFile.path, isCoverImage);
+
+        if (croppedFile != null) {
+          setState(() {
+            if (isCoverImage) {
+              _coverImage = File(croppedFile.path);
+            } else {
+              _profileImage = File(croppedFile.path);
+            }
+          });
+          await _persistToStorage();
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                  isCoverImage ? 'Cover photo updated!' : 'Profile picture updated!'
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error selecting image: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<CroppedFile?> _cropImage(String imagePath, bool isCoverImage) async {
+    final croppedFile = await ImageCropper().cropImage(
+      sourcePath: imagePath,
+      compressFormat: ImageCompressFormat.jpg,
+      compressQuality: 90,
+      uiSettings: [
+        AndroidUiSettings(
+          toolbarTitle: isCoverImage ? 'Crop Cover Photo' : 'Crop Profile Picture',
+          toolbarColor: Theme.of(context).colorScheme.primary,
+          toolbarWidgetColor: Colors.white,
+          initAspectRatio: isCoverImage
+              ? CropAspectRatioPreset.ratio16x9
+              : CropAspectRatioPreset.square,
+          lockAspectRatio: !isCoverImage, // Lock square for profile, flexible for cover
+          aspectRatioPresets: isCoverImage ? [
+            CropAspectRatioPreset.original,
+            CropAspectRatioPreset.ratio16x9,
+            CropAspectRatioPreset.ratio4x3,
+            CropAspectRatioPreset.ratio3x2,
+          ] : [
+            CropAspectRatioPreset.square,
+            CropAspectRatioPreset.original,
+          ],
+        ),
+        IOSUiSettings(
+          title: isCoverImage ? 'Crop Cover Photo' : 'Crop Profile Picture',
+          aspectRatioLockEnabled: !isCoverImage,
+          resetAspectRatioEnabled: isCoverImage,
+          aspectRatioPresets: isCoverImage ? [
+            CropAspectRatioPreset.original,
+            CropAspectRatioPreset.ratio16x9,
+            CropAspectRatioPreset.ratio4x3,
+            CropAspectRatioPreset.ratio3x2,
+          ] : [
+            CropAspectRatioPreset.square,
+          ],
+        ),
+      ],
+    );
+    return croppedFile;
   }
 
   void _editAllInfo() async {
@@ -85,10 +336,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   decoration: const InputDecoration(
                     labelText: 'Address',
                     border: OutlineInputBorder(),
+                    hintText: 'Enter your shop address',
                   ),
                   maxLines: 2,
                   validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Enter address' : null,
+                  (v == null || v.trim().isEmpty) ? 'Enter address' : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
@@ -98,7 +350,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     border: OutlineInputBorder(),
                   ),
                   validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Enter timings' : null,
+                  (v == null || v.trim().isEmpty) ? 'Enter timings' : null,
                 ),
               ],
             ),
@@ -127,6 +379,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _address = addr.text.trim();
         timings = time.text.trim();
       });
+      await _persistToStorage();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Profile updated successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
     }
   }
 
@@ -159,10 +419,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
 
-                // optional cover image (shows if _coverImageUrl is set)
-                if (_coverImageUrl != null && _coverImageUrl!.isNotEmpty)
-                  Image.network(
-                    _coverImageUrl!,
+                // Cover image (shows if selected)
+                if (_coverImage != null)
+                  Image.file(
+                    _coverImage!,
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => const SizedBox.shrink(),
                   ),
@@ -170,7 +430,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 // scrim for legibility
                 Container(color: Colors.black.withOpacity(0.12)),
 
-                // unified button: always shown
+                // Camera button - always shown
                 Positioned(
                   left: 0,
                   right: 0,
@@ -182,22 +442,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       elevation: 2,
                       child: InkWell(
                         borderRadius: BorderRadius.circular(30),
-                        onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Change Banner tapped')),
-                        ),
+                        onTap: _pickCoverImage,
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 16, vertical: 8),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
-                            children: const [
-                              Icon(Icons.photo_camera_rounded,
+                            children: [
+                              const Icon(Icons.photo_camera_rounded,
                                   size: 18, color: Colors.black87),
-                              SizedBox(width: 8),
+                              const SizedBox(width: 8),
                               Text(
-                                'Add a cover photo',
-                                style: TextStyle(fontWeight: FontWeight.w600),
+                                _coverImage == null
+                                    ? 'Add a cover photo'
+                                    : 'Change cover photo',
+                                style: const TextStyle(fontWeight: FontWeight.w600),
                               ),
                             ],
                           ),
@@ -223,29 +482,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // DP + button
+                    // Profile picture + edit button
                     Stack(
                       clipBehavior: Clip.none,
                       children: [
-                        const CircleAvatar(
+                        CircleAvatar(
                           radius: 36,
-                          backgroundColor: Color(0xFFE9EEF8),
-                          child: Icon(
+                          backgroundColor: const Color(0xFFE9EEF8),
+                          backgroundImage: _profileImage != null
+                              ? FileImage(_profileImage!)
+                              : null,
+                          child: _profileImage == null
+                              ? const Icon(
                             Icons.person_rounded,
                             size: 40,
                             color: Colors.black38,
-                          ),
+                          )
+                              : null,
                         ),
                         Positioned(
                           bottom: -2,
                           right: -2,
                           child: InkWell(
-                            onTap: () => ScaffoldMessenger.of(context)
-                                .showSnackBar(
-                              const SnackBar(
-                                content: Text('Change DP tapped'),
-                              ),
-                            ),
+                            onTap: _pickProfileImage,
                             child: Container(
                               padding: const EdgeInsets.all(4),
                               decoration: BoxDecoration(
@@ -256,8 +515,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   width: 2,
                                 ),
                               ),
-                              child: const Icon(
-                                Icons.add_rounded,
+                              child: Icon(
+                                _profileImage == null
+                                    ? Icons.add_rounded
+                                    : Icons.edit_rounded,
                                 size: 18,
                                 color: Colors.white,
                               ),
@@ -294,13 +555,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           const SizedBox(height: 2),
                           _IconLine(
                             icon: Icons.location_on_rounded,
-                            text: _address,
+                            text: _address == '456 Innovation Drive, Pune' ?
+                            'Tap to add your address' : _address,
                             onTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Maps will open later'),
-                                ),
-                              );
+                              if (_address == '456 Innovation Drive, Pune') {
+                                // Show edit dialog if address is still the default
+                                _editAllInfo();
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Maps will open later'),
+                                  ),
+                                );
+                              }
                             },
                           ),
                         ],
@@ -323,7 +590,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             const SizedBox(width: 6),
                             Switch.adaptive(
                               value: isOpen,
-                              onChanged: (v) => setState(() => isOpen = v),
+                              onChanged: (v) async {
+                                setState(() => isOpen = v);
+                                await _persistToStorage();
+                              },
                             ),
                           ],
                         ),
@@ -345,29 +615,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           ],
                         ),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton.icon(
+                            onPressed: _editAllInfo,
+                            icon: const Icon(Icons.edit_rounded, size: 14),
+                            label: const Text('Edit Info'),
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              minimumSize: Size.zero,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton.icon(
-                    onPressed: _editAllInfo,
-                    icon: const Icon(Icons.edit_rounded, size: 18),
-                    label: const Text('Edit Info'),
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      minimumSize: Size.zero,
-                    ),
-                  ),
-                ),
+                const SizedBox(height: 0),
               ],
             ),
           ),
         ),
 
-        // -------- KPIs --------
         // -------- KPIs --------
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -384,8 +653,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: Row(
                         children: [
                           Icon(Icons.group_rounded, color: cs.primary),
-                          SizedBox(width: 10),
-                          Column(
+                          const SizedBox(width: 10),
+                          const Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
@@ -410,7 +679,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
               ),
-              SizedBox(width: 12),
+              const SizedBox(width: 12),
               Expanded(
                 child: Material(
                   color: Colors.transparent,
@@ -422,8 +691,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: Row(
                         children: [
                           Icon(Icons.star_rounded, color: cs.primary),
-                          SizedBox(width: 10),
-                          Column(
+                          const SizedBox(width: 10),
+                          const Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
@@ -514,7 +783,7 @@ class AppCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding:
-          padding ?? const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      padding ?? const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(radius),
@@ -553,7 +822,7 @@ class FeatureBox extends StatelessWidget {
         radius: 16,
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center, // Vertically centered
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, size: 28, color: cs.primary),
             const SizedBox(height: 8),
@@ -587,10 +856,10 @@ class _IconLine extends StatelessWidget {
     return onTap == null
         ? row
         : InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(6),
-            child: Padding(padding: const EdgeInsets.all(2), child: row),
-          );
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Padding(padding: const EdgeInsets.all(2), child: row),
+    );
   }
 }
 
@@ -599,7 +868,8 @@ class _IconLine extends StatelessWidget {
 class BaseSlidePage extends StatelessWidget {
   final String title;
   final Widget child;
-  const BaseSlidePage({super.key, required this.title, required this.child});
+  final bool showCreateButton;
+  const BaseSlidePage({super.key, required this.title, required this.child, this.showCreateButton = true});
 
   @override
   Widget build(BuildContext context) {
@@ -613,7 +883,8 @@ class BaseSlidePage extends StatelessWidget {
         foregroundColor: Colors.black87,
       ),
       body: Container(color: const Color(0xFFF6F7FB), child: child),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: showCreateButton
+          ? FloatingActionButton.extended(
         onPressed: () => ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Create $title tapped'))),
@@ -621,7 +892,8 @@ class BaseSlidePage extends StatelessWidget {
         label: Text('New $title'),
         backgroundColor: cs.primary,
         foregroundColor: Colors.white,
-      ),
+      )
+          : null,
     );
   }
 }
@@ -662,9 +934,9 @@ class ProductsPage extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         itemCount: 8,
         separatorBuilder: (_, __) => const SizedBox(height: 8),
-        itemBuilder: (_, i) => AppCard(
+        itemBuilder: (_, i) => const AppCard(
           child: Row(
-            children: const [
+            children: [
               _ThumbIcon(),
               SizedBox(width: 12),
               Expanded(child: Text('Sample Product Name')),
@@ -688,10 +960,10 @@ class OffersPage extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         itemCount: 5,
         separatorBuilder: (_, __) => const SizedBox(height: 10),
-        itemBuilder: (_, i) => AppCard(
+        itemBuilder: (_, i) => const AppCard(
           radius: 16,
           child: Row(
-            children: const [
+            children: [
               Icon(Icons.local_offer_rounded),
               SizedBox(width: 12),
               Expanded(child: Text('Flat 20% off • Aug 1 – Aug 31')),
@@ -709,6 +981,7 @@ class InsightsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BaseSlidePage(
       title: 'Insights',
+      showCreateButton: false,
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: const [
@@ -735,6 +1008,7 @@ class FollowersPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BaseSlidePage(
       title: 'Followers',
+      showCreateButton: false,
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: 20,
@@ -748,51 +1022,20 @@ class FollowersPage extends StatelessWidget {
   }
 }
 
-class OrdersTodayPage extends StatelessWidget {
-  const OrdersTodayPage({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return BaseSlidePage(
-      title: 'Orders Today',
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: 12,
-        itemBuilder: (_, i) => AppCard(
-          child: ListTile(
-            leading: const Icon(Icons.receipt_long_rounded),
-            title: Text('Order #${1000 + i}'),
-            subtitle: const Text('2 items • COD'),
-            trailing: const Text('₹ 499'),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class RatingPage extends StatelessWidget {
   const RatingPage({super.key});
   @override
   Widget build(BuildContext context) {
     return BaseSlidePage(
       title: 'Rating',
-      child: ListView.separated(
+      showCreateButton: false,
+      child: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: 5,
-        separatorBuilder: (_, __) => const SizedBox(height: 10),
-        itemBuilder: (_, i) => AppCard(
-          radius: 16,
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: Theme.of(
-                context,
-              ).colorScheme.primary.withOpacity(0.1),
-              child: const Icon(Icons.star_rounded, color: Colors.orange),
-            ),
-            title: Text('${5 - i}.0 Stars'),
-            subtitle: Text('${10 - i} Reviews'),
-            trailing: const Icon(Icons.chevron_right_rounded),
-          ),
+        itemCount: 20,
+        itemBuilder: (_, i) => ListTile(
+          leading: const CircleAvatar(child: Icon(Icons.person)),
+          title: Text('Rated on product name ${i + 1}'),
+          subtitle: const Text('rated 4'),
         ),
       ),
     );
