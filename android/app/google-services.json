@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "1074551247164",
+    "project_id": "my-business-app-5630b",
+    "storage_bucket": "my-business-app-5630b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1074551247164:android:35ea6466984820aa518e39",
+        "android_client_info": {
+          "package_name": "com.example.my_business_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1074551247164-aun11541o9vmkagj6uq4edtgp8shia3s.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCMs5v8Q8KlnUtSMf8qiy-6gSaSnw1lA3I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1074551247164-aun11541o9vmkagj6uq4edtgp8shia3s.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

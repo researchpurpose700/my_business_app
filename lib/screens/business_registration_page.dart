@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../config/save_data.dart';
 import '../core/language/generated/app_localizations.dart';
+import 'package:my_business_app/services/authservice.dart';
+// AuthService for Google sign-in
 
 class BusinessRegistrationPage extends StatefulWidget {
   final VoidCallback onFinished;
@@ -21,6 +24,7 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
 
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
+  bool _isGoogleLoading = false; // Add this for Google sign-in loading state
 
   final TextEditingController _fullNameController = TextEditingController();
   final TextEditingController _shopNameController = TextEditingController();
@@ -30,8 +34,10 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
   String? _selectedService;
   String _countryCode = '+91';
   bool _isOtpSent = false;
+  bool _isGoogleSignedIn = false; // Track Google sign-in state
 
   final String _dummyOtp = "123456";
+  final AuthService _authService = AuthService(); // Add AuthService instance
 
   final List<String> services = [
     'groceryAndEssentials',
@@ -52,6 +58,40 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
     _loadSaved();
   }
 
+  // Google Sign-In Method
+  Future<void> _signInWithGoogle() async {
+    setState(() => _isGoogleLoading = true);
+
+    try {
+      final User? user = await _authService.signInWithGoogle();
+
+      if (user != null) {
+        // Pre-fill form with Google account data
+        _fullNameController.text = user.displayName ?? '';
+
+        setState(() {
+          _isGoogleSignedIn = true;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Welcome ${user.displayName ?? 'User'}!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Google sign-in failed. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() => _isGoogleLoading = false);
+    }
+  }
+
   // ---------- LOCAL FILE HANDOFF ----------
   Future<void> _saveData() async {
     final data = {
@@ -60,6 +100,7 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
       'service': _selectedService,
       'countryCode': _countryCode,
       'mobile': _mobileController.text.trim(),
+      'isGoogleSignedIn': _isGoogleSignedIn,
     };
     await LocalStorage.upsertProfile(data);
   }
@@ -72,6 +113,7 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
       _mobileController.text = jsonMap['mobile'] ?? '';
       _countryCode = jsonMap['countryCode'] ?? '+91';
       _selectedService = jsonMap['service'];
+      _isGoogleSignedIn = jsonMap['isGoogleSignedIn'] ?? false;
       setState(() {});
     }
   }
@@ -107,7 +149,8 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
 
   Future<void> _submit() async {
     if (_formKey.currentState!.validate()) {
-      if (_otpController.text != _dummyOtp) {
+      // If Google signed in, skip OTP verification
+      if (!_isGoogleSignedIn && _otpController.text != _dummyOtp) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("❌ Invalid OTP. Please enter 123456")),
         );
@@ -184,6 +227,31 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
                         ),
                         const SizedBox(height: 24),
 
+                        // Google Sign-In Button
+                        _buildGoogleSignInButton(),
+
+                        // Divider
+                        if (!_isGoogleSignedIn) ...[
+                          const SizedBox(height: 20),
+                          Row(
+                            children: [
+                              Expanded(child: Divider(color: Colors.grey[400])),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                child: Text(
+                                  'OR',
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                              Expanded(child: Divider(color: Colors.grey[400])),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+                        ],
+
                         _buildTextField(
                           controller: _fullNameController,
                           label: AppLocalizations.of(context)!.fullName,
@@ -216,61 +284,113 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
                         ),
                         const SizedBox(height: 16),
 
-                        Row(
-                          children: [
-                            SizedBox(
-                              width: 80,
-                              child: DropdownButtonFormField<String>(
-                                value: _countryCode,
-                                items: ['+91', '+1', '+44']
-                                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                                    .toList(),
-                                onChanged: (val) => setState(() => _countryCode = val!),
-                                decoration: _dropdownDecoration(),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: TextFormField(
-                                controller: _mobileController,
-                                keyboardType: TextInputType.phone,
-                                maxLength: 10,
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.digitsOnly,
-                                  LengthLimitingTextInputFormatter(10),
-                                ],
-                                validator: (val) {
-                                  if (val == null || val.isEmpty) {
-                                    return AppLocalizations.of(context)!.enter10DigitMobile;
-                                  }
-                                  final pattern = RegExp(r'^[6-9]\d{9}$');
-                                  if (!pattern.hasMatch(val)) {
-                                    return "Mobile must start with 6,7,8,9 and be 10 digits";
-                                  }
-                                  return null;
-                                },
-                                onChanged: (val) {
-                                  final pattern = RegExp(r'^[6-9]\d{9}$');
-                                  if (pattern.hasMatch(val) && !_isOtpSent) {
-                                    _sendOtp(fromAuto: true);
-                                  }
-                                },
-                                decoration: InputDecoration(
-                                  labelText: AppLocalizations.of(context)!.mobileNumber,
-                                  filled: true,
-                                  fillColor: Colors.grey[100],
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  counterText: '',
+                        // Mobile number and OTP (show only if not Google signed in)
+                        if (!_isGoogleSignedIn) ...[
+                          Row(
+                            children: [
+                              SizedBox(
+                                width: 80,
+                                child: DropdownButtonFormField<String>(
+                                  value: _countryCode,
+                                  items: ['+91', '+1', '+44']
+                                      .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                                      .toList(),
+                                  onChanged: (val) => setState(() => _countryCode = val!),
+                                  decoration: _dropdownDecoration(),
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _mobileController,
+                                  keyboardType: TextInputType.phone,
+                                  maxLength: 10,
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.digitsOnly,
+                                    LengthLimitingTextInputFormatter(10),
+                                  ],
+                                  validator: (val) {
+                                    if (val == null || val.isEmpty) {
+                                      return AppLocalizations.of(context)!.enter10DigitMobile;
+                                    }
+                                    final pattern = RegExp(r'^[6-9]\d{9}$');
+                                    if (!pattern.hasMatch(val)) {
+                                      return "Mobile must start with 6,7,8,9 and be 10 digits";
+                                    }
+                                    return null;
+                                  },
+                                  onChanged: (val) {
+                                    final pattern = RegExp(r'^[6-9]\d{9}$');
+                                    if (pattern.hasMatch(val) && !_isOtpSent) {
+                                      _sendOtp(fromAuto: true);
+                                    }
+                                  },
+                                  decoration: InputDecoration(
+                                    labelText: AppLocalizations.of(context)!.mobileNumber,
+                                    filled: true,
+                                    fillColor: Colors.grey[100],
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    counterText: '',
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          _otpBox(context),
+                        ] else ...[
+                          // Show mobile input for Google users (optional)
+                          Row(
+                            children: [
+                              SizedBox(
+                                width: 80,
+                                child: DropdownButtonFormField<String>(
+                                  value: _countryCode,
+                                  items: ['+91', '+1', '+44']
+                                      .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                                      .toList(),
+                                  onChanged: (val) => setState(() => _countryCode = val!),
+                                  decoration: _dropdownDecoration(),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _mobileController,
+                                  keyboardType: TextInputType.phone,
+                                  maxLength: 10,
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.digitsOnly,
+                                    LengthLimitingTextInputFormatter(10),
+                                  ],
+                                  validator: (val) {
+                                    if (val == null || val.isEmpty) {
+                                      return AppLocalizations.of(context)!.enter10DigitMobile;
+                                    }
+                                    final pattern = RegExp(r'^[6-9]\d{9}$');
+                                    if (!pattern.hasMatch(val)) {
+                                      return "Mobile must start with 6,7,8,9 and be 10 digits";
+                                    }
+                                    return null;
+                                  },
+                                  decoration: InputDecoration(
+                                    labelText: AppLocalizations.of(context)!.mobileNumber,
+                                    filled: true,
+                                    fillColor: Colors.grey[100],
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    counterText: '',
+                                    helperText: 'Required for order notifications',
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
 
-                        _otpBox(context),
                         const SizedBox(height: 20),
 
                         ElevatedButton(
@@ -311,6 +431,67 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
                 ),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Google Sign-In Button Widget
+  Widget _buildGoogleSignInButton() {
+    return Container(
+      width: double.infinity,
+      height: 50,
+      child: ElevatedButton(
+        onPressed: _isGoogleLoading ? null : (_isGoogleSignedIn ? null : _signInWithGoogle),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: _isGoogleSignedIn ? Colors.green : Colors.white,
+          foregroundColor: _isGoogleSignedIn ? Colors.white : Colors.black87,
+          side: BorderSide(
+            color: _isGoogleSignedIn ? Colors.green : Colors.grey[300]!,
+            width: 1,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          elevation: _isGoogleSignedIn ? 2 : 1,
+        ),
+        child: _isGoogleLoading
+            ? const SizedBox(
+          height: 20,
+          width: 20,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        )
+            : Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (!_isGoogleSignedIn) ...[
+              Image.network(
+                'https://developers.google.com/identity/images/g-logo.png',
+                height: 20,
+                width: 20,
+                errorBuilder: (context, error, stackTrace) =>
+                const Icon(Icons.login, size: 20),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Continue with Google',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ] else ...[
+              const Icon(Icons.check_circle, size: 20),
+              const SizedBox(width: 8),
+              const Text(
+                'Signed in with Google',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
           ],
         ),
       ),
