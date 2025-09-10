@@ -14,8 +14,7 @@ class LocalStorage {
     await file.writeAsString(jsonEncode(data));
   }
 
-  /// Merge-and-save: loads existing JSON (if any), merges with [data], then saves.
-  /// Existing keys are overwritten by incoming keys; unspecified keys are preserved.
+  /// Merge incoming data with existing JSON and save
   static Future<void> upsertProfile(Map<String, dynamic> data) async {
     final file = await _getFile();
     Map<String, dynamic> merged = {};
@@ -27,7 +26,7 @@ class LocalStorage {
           merged = Map<String, dynamic>.from(jsonMap);
         }
       } catch (_) {
-        // If corrupted, start fresh with incoming data
+        // If file is corrupted, start fresh
       }
     }
     merged.addAll(data);

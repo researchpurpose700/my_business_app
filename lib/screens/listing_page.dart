@@ -205,21 +205,16 @@ class _MyListingState extends State<listingPage> {
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         title: const Text("My Listings"),
-        toolbarHeight: 80,
         backgroundColor: Colors.lightBlueAccent,
         foregroundColor: Colors.black87,
         elevation: 0,
         actions: [
           Container(
-            margin: const EdgeInsets.only(right: 22),
-            child: SizedBox(
-              width: 50,   // set your custom width
-              height: 50,  // set your custom height
-              child: FloatingActionButton(
-                onPressed: () => openForm(),
-                backgroundColor: Colors.blue,
-                child: const Icon(Icons.add, color: Colors.white),
-              ),
+            margin: const EdgeInsets.only(right: 16),
+            child: FloatingActionButton.small(
+              onPressed: () => openForm(),
+              backgroundColor: Colors.blue,
+              child: const Icon(Icons.add, color: Colors.white),
             ),
           ),
         ],
@@ -626,7 +621,7 @@ class _ListingFormState extends State<ListingForm> {
       );
 
       if (pickedFile != null && mounted) {
-        await _cropImageSafe(pickedFile);
+        await _showCropDialog(pickedFile);
       }
     } catch (e) {
       if (mounted) {
@@ -643,7 +638,42 @@ class _ListingFormState extends State<ListingForm> {
     }
   }
 
-  // Confirmation dialog removed: we crop immediately after picking
+  Future<void> _showCropDialog(XFile pickedFile) async {
+    if (!mounted) return;
+
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Crop Image?'),
+          content: const Text('Would you like to crop this image before adding it?'),
+          actions: [
+            TextButton(
+              onPressed: _isCropping ? null : () {
+                Navigator.of(dialogContext).pop();
+                _saveImageDirectly(pickedFile);
+              },
+              child: const Text('Skip'),
+            ),
+            ElevatedButton(
+              onPressed: _isCropping ? null : () {
+                Navigator.of(dialogContext).pop();
+                _cropImageSafe(pickedFile);
+              },
+              child: _isCropping
+                  ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+                  : const Text('Crop'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   // SOLUTION 2: Safe crop method with state management
   Future<void> _cropImageSafe(XFile imageFile) async {

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'core/language/generated/app_localizations.dart';
@@ -11,9 +10,7 @@ import 'screens/business_registration_page.dart';
 /// App onboarding flow states
 enum AppFlowState { languageSelection, registration, main }
 
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+void main() {
   runApp(const MyApp());
 }
 
@@ -120,7 +117,18 @@ class _MyAppState extends State<MyApp> {
                 print('MAIN: switching to MainScreen'); // DEBUG log
 
                 if (!mounted) return;
-                setState(() => _flowState = AppFlowState.main);
+                setState(
+                  () => _flowState = AppFlowState.main,
+                ); // state-machine swap
+
+                // Fallback nav to cover edge cases where rebuild is deferred
+                Future.microtask(() {
+                  if (!mounted) return;
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const MainScreen()),
+                    (_) => false,
+                  );
+                });
               },
             );
 

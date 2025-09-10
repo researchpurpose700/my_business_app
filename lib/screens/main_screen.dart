@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:my_business_app/screens/listing_page.dart';
 import 'package:my_business_app/screens/profile_page.dart';
+import 'package:my_business_app/screens/home_page.dart';
 
 
 class MainScreen extends StatefulWidget {
@@ -150,14 +151,7 @@ class NavItem extends StatelessWidget {
  * CONTENT-ONLY PAGES BELOW
  * ========================= */
 
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return const SizedBox.shrink();  // TODO: build real Home page UI
-  }
-}
 
 class OrderPage extends StatelessWidget {
   const OrderPage({super.key});
@@ -167,4 +161,3 @@ class OrderPage extends StatelessWidget {
     return const SizedBox.shrink();  // TODO: build real Home page UI
   }
 }
-
