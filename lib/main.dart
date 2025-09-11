@@ -5,7 +5,7 @@ import 'core/language/generated/app_localizations.dart';
 import 'screens/language_selection_page.dart';
 import 'core/theme/colors.dart';
 import 'screens/main_screen.dart';
-import 'screens/business_registration_page.dart';
+import 'screens/login_page.dart';
 
 /// App onboarding flow states
 enum AppFlowState { languageSelection, registration, main }
@@ -109,7 +109,7 @@ class _MyAppState extends State<MyApp> {
             );
 
           case AppFlowState.registration:
-            return BusinessRegistrationPage(
+            return BusinessLoginPage(
               onFinished: () async {
                 final prefs = await SharedPreferences.getInstance();
                 await prefs.setBool('isRegistered', true);
