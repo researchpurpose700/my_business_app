@@ -983,7 +983,7 @@ class _ListingFormState extends State<ListingForm> {
               if (!isEditing) ...[
                 _buildModernContainer(
                   child: DropdownButtonFormField<String>(
-                    value: listingType,
+                    initialValue: listingType,
                     items: const [
                       DropdownMenuItem(value: "Seller", child: Text("🏪 Seller")),
                       DropdownMenuItem(value: "Service", child: Text("🛠 Service")),
@@ -1186,7 +1186,7 @@ class _ListingFormState extends State<ListingForm> {
               // Status
               _buildModernContainer(
                 child: DropdownButtonFormField<String>(
-                  value: status,
+                  initialValue: status,
                   items: _getDropdownItems,
                   decoration: const InputDecoration(
                     labelText: "Status",

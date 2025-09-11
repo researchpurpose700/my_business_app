@@ -75,7 +75,7 @@ class OrderedItem {
 
 // Main HomePage
 class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+  const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -261,7 +261,7 @@ class _HomePageState extends State<HomePage> {
 class StoryCameraPage extends StatefulWidget {
   final Function(Story) onStoryCreated;
 
-  const StoryCameraPage({Key? key, required this.onStoryCreated}) : super(key: key);
+  const StoryCameraPage({super.key, required this.onStoryCreated});
 
   @override
   State<StoryCameraPage> createState() => _StoryCameraPageState();
@@ -659,12 +659,12 @@ class StoryPreviewPage extends StatefulWidget {
   final Function(Story) onStoryCreated;
 
   const StoryPreviewPage({
-    Key? key,
+    super.key,
     this.videoPath,
     this.imagePath,
     required this.duration,
     required this.onStoryCreated,
-  }) : super(key: key);
+  });
 
   @override
   State<StoryPreviewPage> createState() => _StoryPreviewPageState();
@@ -889,6 +889,8 @@ class _StoryPreviewPageState extends State<StoryPreviewPage> {
 
 // Header Widget
 class HeaderWidget extends StatelessWidget {
+  const HeaderWidget({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -981,11 +983,11 @@ class StoryCard extends StatelessWidget {
   final VoidCallback onProfileTap;
 
   const StoryCard({
-    Key? key,
+    super.key,
     required this.story,
     required this.onTap,
     required this.onProfileTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1077,6 +1079,8 @@ class StoryCard extends StatelessWidget {
 
 // Stats Cards Widget
 class StatsCardsWidget extends StatelessWidget {
+  const StatsCardsWidget({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -1141,7 +1145,7 @@ class StatsCard extends StatelessWidget {
   final Color subtitleColor;
 
   const StatsCard({
-    Key? key,
+    super.key,
     this.icon,
     this.customIcon,
     required this.iconColor,
@@ -1149,7 +1153,7 @@ class StatsCard extends StatelessWidget {
     required this.value,
     required this.subtitle,
     required this.subtitleColor,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1211,7 +1215,7 @@ class StatsCard extends StatelessWidget {
 class MostOrderedHeader extends StatelessWidget {
   final VoidCallback onViewAll;
 
-  const MostOrderedHeader({Key? key, required this.onViewAll}) : super(key: key);
+  const MostOrderedHeader({super.key, required this.onViewAll});
 
   @override
   Widget build(BuildContext context) {
@@ -1245,7 +1249,7 @@ class MostOrderedHeader extends StatelessWidget {
 class MostOrderedPreview extends StatelessWidget {
   final List<OrderedItem> items;
 
-  const MostOrderedPreview({Key? key, required this.items}) : super(key: key);
+  const MostOrderedPreview({super.key, required this.items});
 
   @override
   Widget build(BuildContext context) {
@@ -1259,7 +1263,7 @@ class MostOrderedPreview extends StatelessWidget {
 class OrderedItemCard extends StatelessWidget {
   final OrderedItem item;
 
-  const OrderedItemCard({Key? key, required this.item}) : super(key: key);
+  const OrderedItemCard({super.key, required this.item});
 
   @override
   Widget build(BuildContext context) {
@@ -1345,6 +1349,8 @@ class OrderedItemCard extends StatelessWidget {
 
 // Promotional Cards Widget
 class PromotionalCardsWidget extends StatelessWidget {
+  const PromotionalCardsWidget({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -1546,7 +1552,7 @@ class PromotionalCardsWidget extends StatelessWidget {
 class StoryDetailsModal extends StatelessWidget {
   final Story story;
 
-  const StoryDetailsModal({Key? key, required this.story}) : super(key: key);
+  const StoryDetailsModal({super.key, required this.story});
 
   @override
   Widget build(BuildContext context) {
@@ -1707,7 +1713,7 @@ class StoryDetailsModal extends StatelessWidget {
                         ),
                         SizedBox(height: 12),
 
-                        ...story.comments.map((comment) => CommentCard(comment: comment)).toList(),
+                        ...story.comments.map((comment) => CommentCard(comment: comment)),
                       ],
 
                       // Expiry Notice
@@ -1786,12 +1792,12 @@ class InsightCard extends StatelessWidget {
   final String value;
 
   const InsightCard({
-    Key? key,
+    super.key,
     required this.icon,
     required this.color,
     required this.title,
     required this.value,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1831,7 +1837,7 @@ class InsightCard extends StatelessWidget {
 class CommentCard extends StatelessWidget {
   final Comment comment;
 
-  const CommentCard({Key? key, required this.comment}) : super(key: key);
+  const CommentCard({super.key, required this.comment});
 
   @override
   Widget build(BuildContext context) {
@@ -1912,7 +1918,7 @@ class CommentCard extends StatelessWidget {
 class CreatePostModal extends StatefulWidget {
   final Function(Story) onStoryCreated;
 
-  const CreatePostModal({Key? key, required this.onStoryCreated}) : super(key: key);
+  const CreatePostModal({super.key, required this.onStoryCreated});
 
   @override
   State<CreatePostModal> createState() => _CreatePostModalState();
@@ -2082,7 +2088,7 @@ class _CreatePostModalState extends State<CreatePostModal> {
 class MostOrderedListPage extends StatelessWidget {
   final List<OrderedItem> items;
 
-  const MostOrderedListPage({Key? key, required this.items}) : super(key: key);
+  const MostOrderedListPage({super.key, required this.items});
 
   @override
   Widget build(BuildContext context) {

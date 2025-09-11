@@ -1,13 +1,11 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import '../config/save_data.dart';                         // <— helper
 import '../core/language/generated/app_localizations.dart';
+import 'dart:async';
+import 'package:flutter/services.dart';
 
 class BusinessRegistrationPage extends StatefulWidget {
   final VoidCallback onFinished;
-  const BusinessRegistrationPage({Key? key, required this.onFinished})
-      : super(key: key);
+  const BusinessRegistrationPage({super.key, required this.onFinished});
 
   @override
   State<BusinessRegistrationPage> createState() =>
@@ -20,7 +18,7 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
   Timer? _cooldownTimer;
 
   final _formKey = GlobalKey<FormState>();
-  bool _isLoading = false;
+  bool _isLoading = false; // NEW loading flag
 
   final TextEditingController _fullNameController = TextEditingController();
   final TextEditingController _shopNameController = TextEditingController();
@@ -31,8 +29,10 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
   String _countryCode = '+91';
   bool _isOtpSent = false;
 
+  // TODO: Replace with real OTP API integration later
   final String _dummyOtp = "123456";
 
+  // TODO: Fetch categories from backend once API is ready
   final List<String> services = [
     'groceryAndEssentials',
     'pharmacyAndHealth',
@@ -46,56 +46,37 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
     'other',
   ];
 
-  @override
-  void initState() {
-    super.initState();
-    _loadSaved();
-  }
-
-  // ---------- LOCAL FILE HANDOFF ----------
-  Future<void> _saveData() async {
-    final data = {
-      'fullName': _fullNameController.text.trim(),
-      'shopName': _shopNameController.text.trim(),
-      'service': _selectedService,
-      'countryCode': _countryCode,
-      'mobile': _mobileController.text.trim(),
-    };
-    await LocalStorage.saveProfile(data);
-  }
-
-  Future<void> _loadSaved() async {
-    final jsonMap = await LocalStorage.loadProfile();
-    if (jsonMap != null) {
-      _fullNameController.text = jsonMap['fullName'] ?? '';
-      _shopNameController.text = jsonMap['shopName'] ?? '';
-      _mobileController.text   = jsonMap['mobile'] ?? '';
-      _countryCode             = jsonMap['countryCode'] ?? '+91';
-      _selectedService         = jsonMap['service'];
-      setState(() {});
-    }
-  }
-  // ----------------------------------------
-
   void _sendOtp({bool fromAuto = false}) {
     final phone = _mobileController.text.trim();
     if (phone.length != 10) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.pleaseEnterMobileNumberFirst)),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.pleaseEnterMobileNumberFirst,
+          ),
+        ),
       );
       return;
     }
+
     if (fromAuto && _isOtpSent) return;
+
     if (_resendIn > 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Please wait $_resendIn s to resend OTP')),
       );
       return;
     }
-    setState(() => _isOtpSent = true);
+
+    setState(() {
+      _isOtpSent = true;
+    });
     _startCooldown();
+
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(AppLocalizations.of(context)!.otpSentToYourMobileNumber)),
+      SnackBar(
+        content: Text(AppLocalizations.of(context)!.otpSentToYourMobileNumber),
+      ),
     );
   }
 
@@ -109,16 +90,22 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
       }
 
       setState(() => _isLoading = true);
+
+      // Simulate network delay
       await Future.delayed(const Duration(seconds: 2));
 
-      await _saveData();
-
       setState(() => _isLoading = false);
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.accountCreatedSuccessfully)),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.accountCreatedSuccessfully,
+          ),
+        ),
       );
 
-      widget.onFinished();
+      print('BRP: onFinished() called'); // DEBUG
+      widget.onFinished(); // This calls the navigation to next step
     }
   }
 
@@ -126,8 +113,10 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
+        // NEW: SafeArea to protect from notches/keyboard
         child: Stack(
           children: [
+            // Gradient background
             Container(
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
@@ -137,9 +126,13 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
                 ),
               ),
             ),
+
+            // Floating circles
             Positioned(top: 100, left: 50, child: _floatingCircle(60)),
             Positioned(bottom: 150, right: 40, child: _floatingCircle(80)),
             Positioned(bottom: 100, left: 100, child: _floatingCircle(40)),
+
+            // Main form
             Center(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(20),
@@ -161,8 +154,36 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        _logoBox(),
+                        // Logo
+                        Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFFF6B6B), Color(0xFF4ECDC4)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                          ),
+                          child: Center(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: Image.asset(
+                                'assets/images/logo.png',
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => const Icon(
+                                  Icons.store,
+                                  size: 40,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                         const SizedBox(height: 16),
+
+                        // Title
                         Text(
                           AppLocalizations.of(context)!.joinOurNetwork,
                           style: TextStyle(
@@ -173,11 +194,17 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          AppLocalizations.of(context)!.registerYourBusinessInMinutes,
-                          style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                          AppLocalizations.of(
+                            context,
+                          )!.registerYourBusinessInMinutes,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[600],
+                          ),
                         ),
                         const SizedBox(height: 24),
 
+                        // Full Name
                         _buildTextField(
                           controller: _fullNameController,
                           label: AppLocalizations.of(context)!.fullName,
@@ -185,6 +212,8 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
                               ? AppLocalizations.of(context)!.enterFullName
                               : null,
                         ),
+
+                        // Shop Name
                         _buildTextField(
                           controller: _shopNameController,
                           label: AppLocalizations.of(context)!.shopName,
@@ -193,34 +222,69 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
                               : null,
                         ),
 
+                        // Services Dropdown
                         DropdownButtonFormField<String>(
-                          value: _selectedService,
-                          hint: Text(AppLocalizations.of(context)!.selectYourCategory),
+                          initialValue: _selectedService, // Changed from initialValue to value
+                          hint: Text(
+                            AppLocalizations.of(context)!.selectYourCategory,
+                          ),
                           items: services
-                              .map((s) => DropdownMenuItem(
-                            value: s,
-                            child: Text(_getServiceLabel(context, s)),
-                          ))
+                              .map(
+                                (s) => DropdownMenuItem(
+                              value: s,
+                              child: Text(_getServiceLabel(context, s)),
+                            ),
+                          )
                               .toList(),
-                          onChanged: (val) => setState(() => _selectedService = val),
+                          onChanged: (val) =>
+                              setState(() => _selectedService = val),
                           validator: (val) => val == null
-                              ? AppLocalizations.of(context)!.pleaseSelectAService
+                              ? AppLocalizations.of(
+                            context,
+                          )!.pleaseSelectAService
                               : null,
-                          decoration: _dropdownDecoration(),
+                          decoration: InputDecoration(
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 20,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[100],
+                          ),
                         ),
                         const SizedBox(height: 16),
 
+                        // Mobile + OTP
                         Row(
                           children: [
                             SizedBox(
                               width: 80,
                               child: DropdownButtonFormField<String>(
-                                value: _countryCode,
+                                initialValue: _countryCode, // Changed from initialValue to value
                                 items: ['+91', '+1', '+44']
-                                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                                    .map(
+                                      (c) => DropdownMenuItem(
+                                    value: c,
+                                    child: Text(c),
+                                  ),
+                                )
                                     .toList(),
-                                onChanged: (val) => setState(() => _countryCode = val!),
-                                decoration: _dropdownDecoration(),
+                                onChanged: (val) =>
+                                    setState(() => _countryCode = val!),
+                                decoration: InputDecoration(
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 16,
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  filled: true,
+                                  fillColor: Colors.grey[100],
+                                ),
                               ),
                             ),
                             const SizedBox(width: 10),
@@ -234,7 +298,9 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
                                   LengthLimitingTextInputFormatter(10),
                                 ],
                                 validator: (val) => val!.length != 10
-                                    ? AppLocalizations.of(context)!.enter10DigitMobile
+                                    ? AppLocalizations.of(
+                                  context,
+                                )!.enter10DigitMobile
                                     : null,
                                 onChanged: (val) {
                                   if (val.length == 10 && !_isOtpSent) {
@@ -242,7 +308,9 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
                                   }
                                 },
                                 decoration: InputDecoration(
-                                  labelText: AppLocalizations.of(context)!.mobileNumber,
+                                  labelText: AppLocalizations.of(
+                                    context,
+                                  )!.mobileNumber,
                                   filled: true,
                                   fillColor: Colors.grey[100],
                                   border: OutlineInputBorder(
@@ -256,9 +324,75 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
                         ),
                         const SizedBox(height: 16),
 
-                        _otpBox(context),
+                        // OTP Section
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[100],
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Colors.grey[300]!),
+                          ),
+                          child: Column(
+                            children: [
+                              Text(
+                                AppLocalizations.of(context)!.enterOtp,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              TextFormField(
+                                controller: _otpController,
+                                maxLength: 6,
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                  LengthLimitingTextInputFormatter(6),
+                                ],
+                                validator: (val) => val!.length != 6
+                                    ? AppLocalizations.of(
+                                  context,
+                                )!.enter6DigitOtp
+                                    : null,
+                                decoration: InputDecoration(
+                                  labelText: '- - - - - -',
+                                  filled: true,
+                                  fillColor: Colors.grey[100],
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  counterText: '',
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: (_isOtpSent && _resendIn > 0)
+                                    ? null
+                                    : () => _sendOtp(),
+                                child: Text(
+                                  !_isOtpSent
+                                      ? AppLocalizations.of(
+                                    context,
+                                  )!.didntReceiveSendOtp
+                                      : (_resendIn > 0
+                                      ? 'Resend in ${_resendIn}s'
+                                      : AppLocalizations.of(
+                                    context,
+                                  )!.resendOtp),
+                                  style: TextStyle(
+                                    color: (_isOtpSent && _resendIn > 0)
+                                        ? Colors.grey
+                                        : Colors.blue,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                         const SizedBox(height: 20),
 
+                        // Submit button with loading state
                         ElevatedButton(
                           onPressed: _isLoading ? null : _submit,
                           style: ElevatedButton.styleFrom(
@@ -269,18 +403,31 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
                             backgroundColor: Colors.deepPurple,
                           ),
                           child: _isLoading
-                              ? const CircularProgressIndicator(color: Colors.white)
+                              ? const CircularProgressIndicator(
+                            color: Colors.white,
+                          )
                               : Text(
-                            AppLocalizations.of(context)!.createAccount.toUpperCase(),
+                            AppLocalizations.of(
+                              context,
+                            )!.createAccount.toUpperCase(),
                             style: const TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 12),
+
+                        // Terms link (dummy for now)
                         GestureDetector(
-                          onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Terms page coming soon...")),
-                          ),
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Terms page coming soon..."),
+                              ),
+                            );
+                          },
                           child: Text(
                             AppLocalizations.of(context)!.termsAndPrivacy,
                             textAlign: TextAlign.center,
@@ -303,88 +450,14 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
     );
   }
 
-  Widget _logoBox() {
+  Widget _floatingCircle(double size) {
     return Container(
-      width: 64,
-      height: 64,
+      width: size,
+      height: size,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        gradient: const LinearGradient(
-          colors: [Color(0xFFFF6B6B), Color(0xFF4ECDC4)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: Colors.white.withOpacity(0.1),
+        shape: BoxShape.circle,
       ),
-      child: Center(
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: Image.asset(
-            'assets/images/logo.png',
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => const Icon(Icons.store, size: 40, color: Colors.white),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _otpBox(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[300]!),
-      ),
-      child: Column(
-        children: [
-          Text(AppLocalizations.of(context)!.enterOtp,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          const SizedBox(height: 8),
-          TextFormField(
-            controller: _otpController,
-            maxLength: 6,
-            keyboardType: TextInputType.number,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(6),
-            ],
-            validator: (val) => val!.length != 6
-                ? AppLocalizations.of(context)!.enter6DigitOtp
-                : null,
-            decoration: InputDecoration(
-              labelText: '- - - - - -',
-              filled: true,
-              fillColor: Colors.grey[100],
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-              counterText: '',
-            ),
-          ),
-          TextButton(
-            onPressed: (_isOtpSent && _resendIn > 0) ? null : () => _sendOtp(),
-            child: Text(
-              !_isOtpSent
-                  ? AppLocalizations.of(context)!.didntReceiveSendOtp
-                  : (_resendIn > 0
-                  ? 'Resend in ${_resendIn}s'
-                  : AppLocalizations.of(context)!.resendOtp),
-              style: TextStyle(
-                color: (_isOtpSent && _resendIn > 0) ? Colors.grey : Colors.blue,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  InputDecoration _dropdownDecoration() {
-    return InputDecoration(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-      filled: true,
-      fillColor: Colors.grey[100],
     );
   }
 
@@ -410,15 +483,6 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
           counterText: '',
         ),
       ),
-    );
-  }
-
-  Widget _floatingCircle(double size) {
-    return Container(
-      width: size,
-      height: size,
-      decoration:
-      BoxDecoration(color: Colors.white.withOpacity(0.1), shape: BoxShape.circle),
     );
   }
 

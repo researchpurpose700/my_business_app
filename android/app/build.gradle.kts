@@ -1,13 +1,12 @@
 plugins {
     id("com.android.application")
     id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
 
 android {
     namespace = "com.example.my_business_app"
-    compileSdk = 36  // Updated to explicit version
+    compileSdk = 36
     ndkVersion = "27.0.12077973"
 
     compileOptions {
@@ -16,27 +15,43 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
+        jvmTarget = "11"
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.example.my_business_app"
-        // IMPORTANT: Update minSdk to 23 to support Firebase/Google Sign-In
-        minSdk = 23
-        targetSdk = 36
+        minSdk = flutter.minSdkVersion
+        targetSdk = 33
         versionCode = 1
-        versionName = "1.0.0"
-
-        // Enable multidex support
+        versionName = "1.0"
         multiDexEnabled = true
     }
 
     buildTypes {
-        release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+        getByName("release") {
+            // disable code shrinking and resource shrinking for now
+            isMinifyEnabled = false
+            isShrinkResources = false
+
+            // keep signing as debug for local builds (not for production)
             signingConfig = signingConfigs.getByName("debug")
+
+            // if you later enable minify, provide proguard rules:
+            // proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
+        }
+        getByName("debug") {
+            isMinifyEnabled = false
+            isShrinkResources = false
+        }
+    }
+
+    packagingOptions {
+        resources {
+            excludes += setOf(
+                "META-INF/DEPENDENCIES",
+                "META-INF/NOTICE",
+                "META-INF/LICENSE"
+            )
         }
     }
 }
@@ -46,6 +61,5 @@ flutter {
 }
 
 dependencies {
-    // Add multidex support
     implementation("androidx.multidex:multidex:2.0.1")
 }

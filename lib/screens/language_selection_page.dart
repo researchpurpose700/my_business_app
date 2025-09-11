@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:my_business_app/screens/business_registration_page.dart';
-import 'package:my_business_app/screens/main_screen.dart';
 
 class LanguageSelectionPage extends StatelessWidget {
   final void Function(String) onLanguageSelected;
@@ -69,26 +67,9 @@ class LanguageSelectionPage extends StatelessWidget {
                     final lang = languages[index];
                     return InkWell(
                       onTap: () {
-                        // 1. Update locale
+                        // Update locale and let MyApp's state machine show the next screen
+                        // Avoid manual navigation here to prevent double navigations
                         onLanguageSelected(lang['code']!);
-
-                        // 2. Navigate to BusinessRegistrationPage
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => BusinessRegistrationPage(
-                              onFinished: () {
-                                // After registration finished, go to MainScreen
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const MainScreen(),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        );
                       },
 
                       borderRadius: BorderRadius.circular(12),
