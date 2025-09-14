@@ -1,6 +1,7 @@
 // language selection page
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:my_business_app/core/theme/dim.dart';
 
 class LanguageSelectionPage extends StatelessWidget {
   final Function(String) onLanguageSelected;
@@ -21,16 +22,16 @@ class LanguageSelectionPage extends StatelessWidget {
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(height: 60),
+              SizedBox(height: 60),
 
               // App Logo
               Icon(Icons.language, size: 90, color: Colors.brown),
 
-              const SizedBox(height: 20),
+              SizedBox(height: Dim.l),
 
               // Title
               Text(
@@ -42,7 +43,7 @@ class LanguageSelectionPage extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(height: 10),
+              SizedBox(height: Dim.s),
 
               // Subtitle
               Text(
@@ -54,13 +55,13 @@ class LanguageSelectionPage extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(height: 40),
+              SizedBox(height: 40),
 
               // Language list
               Expanded(
                 child: ListView.separated(
                   itemCount: languages.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 16),
+                  separatorBuilder: (_, __) => SizedBox(height: Dim.m),
                   itemBuilder: (context, index) {
                     final lang = languages[index];
                     return InkWell(
@@ -70,7 +71,7 @@ class LanguageSelectionPage extends StatelessWidget {
                       },
                       borderRadius: BorderRadius.circular(12),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(
+                        padding: EdgeInsets.symmetric(
                             vertical: 16, horizontal: 20),
                         decoration: BoxDecoration(
                           color: Colors.white,
@@ -111,3 +112,6 @@ class LanguageSelectionPage extends StatelessWidget {
     );
   }
 }
+
+
+

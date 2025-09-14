@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:uuid/uuid.dart';
+import 'package:my_business_app/core/theme/dim.dart';
 
 /// Data Model
 class Listing {
@@ -104,7 +105,7 @@ class _MyListingState extends State<listingPage> {
     return GestureDetector(
       onTap: () => _copyUID(uid),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
         decoration: BoxDecoration(
           color: Colors.grey.shade100,
           borderRadius: BorderRadius.circular(6),
@@ -113,7 +114,7 @@ class _MyListingState extends State<listingPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.fingerprint, size: 12, color: Colors.grey.shade600),
-            const SizedBox(width: 4),
+            SizedBox(width: Dim.xs),
             Text(
               'ID: ${uid.substring(0, 8)}...',
               style: TextStyle(
@@ -179,7 +180,7 @@ class _MyListingState extends State<listingPage> {
                 bottom: 6,
                 right: 6,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                   decoration: BoxDecoration(
                     color: Colors.black.withOpacity(0.8),
                     borderRadius: BorderRadius.circular(10),
@@ -211,7 +212,7 @@ class _MyListingState extends State<listingPage> {
         elevation: 0,
         actions: [
           Container(
-            margin: const EdgeInsets.only(right: 16),
+            margin: EdgeInsets.only(right: 16),
             child: FloatingActionButton.small(
               onPressed: () => openForm(),
               backgroundColor: Colors.blue,
@@ -226,7 +227,7 @@ class _MyListingState extends State<listingPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: Colors.white,
                 shape: BoxShape.circle,
@@ -244,7 +245,7 @@ class _MyListingState extends State<listingPage> {
                 color: Colors.blue.shade300,
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: Dim.l),
             Text(
               "No listings yet",
               style: TextStyle(
@@ -253,7 +254,7 @@ class _MyListingState extends State<listingPage> {
                 color: Colors.grey.shade700,
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: Dim.s),
             Text(
               "Tap + to add your first listing",
               style: TextStyle(
@@ -265,12 +266,12 @@ class _MyListingState extends State<listingPage> {
         ),
       )
           : ListView.builder(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(20),
         itemCount: listings.length,
         itemBuilder: (BuildContext context, int index) {
           final Listing listing = listings[index];
           return Container(
-            margin: const EdgeInsets.only(bottom: 16),
+            margin: EdgeInsets.only(bottom: Dim.m),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
@@ -283,12 +284,12 @@ class _MyListingState extends State<listingPage> {
               ],
             ),
             child: Padding(
-              padding: const EdgeInsets.all(8),
+              padding: EdgeInsets.all(Dim.s),
               child: Row(
                 children: [
                   // Product Image
                   _buildImageWidget(listing.imagePaths, 120),
-                  const SizedBox(width: 5),
+                  SizedBox(width: Dim.xs),
 
                   // Product Details
                   Expanded(
@@ -306,7 +307,7 @@ class _MyListingState extends State<listingPage> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 0),
+                        SizedBox(height: 0),
 
                         // Price
                         Text(
@@ -317,15 +318,15 @@ class _MyListingState extends State<listingPage> {
                             color: Colors.green.shade600,
                           ),
                         ),
-                        const SizedBox(height: 0),
+                        SizedBox(height: 0),
 
                         // ID and Status Row
                         Row(
                           children: [
                             _buildUidBadge(listing.id),
-                            const SizedBox(width: 6),
+                            SizedBox(width: Dim.s),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                              padding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
                               decoration: BoxDecoration(
                                 color: _getStatusColor(listing.status).withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(8),
@@ -341,7 +342,7 @@ class _MyListingState extends State<listingPage> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 2),
+                        SizedBox(height: 2),
 
                         // Description - Multiple lines as shown in image
                         if (listing.description.isNotEmpty)
@@ -358,7 +359,7 @@ class _MyListingState extends State<listingPage> {
 
                         // Experience for services
                         if (listing.type == "Service" && listing.experience.isNotEmpty) ...[
-                          const SizedBox(height: 0),
+                          SizedBox(height: 0),
                           Text(
                             "Experience: ${listing.experience}",
                             style: TextStyle(
@@ -375,7 +376,7 @@ class _MyListingState extends State<listingPage> {
                   // Three dots menu
                   PopupMenuButton<String>(
                     icon: Container(
-                      padding: const EdgeInsets.all(8),
+                      padding: EdgeInsets.all(Dim.s),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -387,7 +388,7 @@ class _MyListingState extends State<listingPage> {
                               shape: BoxShape.circle,
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          SizedBox(height: 4),
                           Container(
                             width: 4,
                             height: 4,
@@ -396,7 +397,7 @@ class _MyListingState extends State<listingPage> {
                               shape: BoxShape.circle,
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          SizedBox(height: 4),
                           Container(
                             width: 4,
                             height: 4,
@@ -423,7 +424,7 @@ class _MyListingState extends State<listingPage> {
                         child: Row(
                           children: [
                             Icon(Icons.edit_outlined, size: 18),
-                            SizedBox(width: 12),
+                            SizedBox(width: Dim.m),
                             Text("Edit"),
                           ],
                         ),
@@ -433,7 +434,7 @@ class _MyListingState extends State<listingPage> {
                         child: Row(
                           children: [
                             Icon(Icons.delete_outline, size: 18, color: Colors.red),
-                            SizedBox(width: 12),
+                            SizedBox(width: Dim.m),
                             Text("Delete", style: TextStyle(color: Colors.red)),
                           ],
                         ),
@@ -550,12 +551,12 @@ class _ListingFormState extends State<ListingForm> {
     showModalBottomSheet(
       context: context,
       builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text('Select Image Source', style: TextStyle(fontSize: 18)),
-            const SizedBox(height: 20),
+            SizedBox(height: Dim.l),
             Row(
               children: [
                 Expanded(
@@ -568,7 +569,7 @@ class _ListingFormState extends State<ListingForm> {
                     label: const Text('Camera'),
                   ),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: 16),
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed: () {
@@ -705,7 +706,7 @@ class _ListingFormState extends State<ListingForm> {
             Text('${savedImagePaths.length}/$maxImages'),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: Dim.s),
         if (savedImagePaths.isEmpty)
           GestureDetector(
             onTap: _showImageSourceDialog,
@@ -715,11 +716,11 @@ class _ListingFormState extends State<ListingForm> {
                 border: Border.all(color: Colors.grey),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Column(
+              child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.add_photo_alternate, size: 32),
-                  SizedBox(height: 8),
+                  SizedBox(height: Dim.s),
                   Text("Tap to add photos"),
                 ],
               ),
@@ -810,7 +811,7 @@ class _ListingFormState extends State<ListingForm> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(20),
           children: [
             // Listing Type
             if (!isEditing) ...[
@@ -828,7 +829,7 @@ class _ListingFormState extends State<ListingForm> {
                   onChanged: _onListingTypeChanged,
                 ),
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: Dim.l),
             ],
 
             // ID Display
@@ -837,7 +838,7 @@ class _ListingFormState extends State<ListingForm> {
                 child: Row(
                   children: [
                     const Icon(Icons.fingerprint, color: Colors.blue, size: 20),
-                    const SizedBox(width: 12),
+                    SizedBox(width: Dim.m),
                     const Text("ID: ", style: TextStyle(fontWeight: FontWeight.w500)),
                     GestureDetector(
                       onTap: () => _copyUID(currentListingId),
@@ -851,12 +852,12 @@ class _ListingFormState extends State<ListingForm> {
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: Dim.l),
             ],
 
             // Images
             _buildModernContainer(child: _buildImagePreviewGrid()),
-            const SizedBox(height: 20),
+            SizedBox(height: Dim.l),
 
             // Title
             _buildModernContainer(
@@ -882,7 +883,7 @@ class _ListingFormState extends State<ListingForm> {
                     onChanged: (value) => setState(() {}),
                     validator: (value) => value?.isEmpty == true ? "Required" : null,
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: Dim.s),
                   Align(
                     alignment: Alignment.centerRight,
                     child: Text(
@@ -899,7 +900,7 @@ class _ListingFormState extends State<ListingForm> {
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: Dim.m),
 
             // Experience (Service only)
             if (listingType == "Service") ...[
@@ -924,7 +925,7 @@ class _ListingFormState extends State<ListingForm> {
                       onChanged: (value) => setState(() {}),
                       validator: (value) => value?.isEmpty == true ? "Required" : null,
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: Dim.s),
                     Align(
                       alignment: Alignment.centerRight,
                       child: Text(
@@ -941,7 +942,7 @@ class _ListingFormState extends State<ListingForm> {
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: Dim.m),
             ],
 
             // Price
@@ -974,7 +975,7 @@ class _ListingFormState extends State<ListingForm> {
                 },
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: Dim.m),
 
             // Warranty
             _buildModernContainer(
@@ -997,7 +998,7 @@ class _ListingFormState extends State<ListingForm> {
                     ],
                     onChanged: (value) => setState(() {}),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: Dim.s),
                   Align(
                     alignment: Alignment.centerRight,
                     child: Text(
@@ -1014,7 +1015,7 @@ class _ListingFormState extends State<ListingForm> {
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: Dim.m),
 
             // Status
             _buildModernContainer(
@@ -1031,7 +1032,7 @@ class _ListingFormState extends State<ListingForm> {
                 },
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: Dim.m),
 
             // Description
             _buildModernContainer(
@@ -1056,7 +1057,7 @@ class _ListingFormState extends State<ListingForm> {
                     ],
                     onChanged: (value) => setState(() {}),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: Dim.s),
                   Align(
                     alignment: Alignment.centerRight,
                     child: Text(
@@ -1073,7 +1074,7 @@ class _ListingFormState extends State<ListingForm> {
                 ],
               ),
             ),
-            const SizedBox(height: 30),
+            SizedBox(height: Dim.xl),
 
             // Save Button
             Container(
@@ -1111,7 +1112,7 @@ class _ListingFormState extends State<ListingForm> {
                 ),
               ),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: Dim.l),
           ],
         ),
       ),
@@ -1131,8 +1132,11 @@ class _ListingFormState extends State<ListingForm> {
           ),
         ],
       ),
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(Dim.m),
       child: child,
     );
   }
 }
+
+
+

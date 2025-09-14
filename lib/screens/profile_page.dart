@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'dart:io';
 import 'package:my_business_app/config/save_data.dart';
+import 'package:my_business_app/core/theme/dim.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -329,7 +330,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ? 'Enter your name'
                       : null,
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: Dim.s),
                 TextFormField(
                   controller: name,
                   decoration: const InputDecoration(
@@ -341,7 +342,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ? 'Enter shop name'
                       : null,
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: Dim.s),
                 TextFormField(
                   controller: phone,
                   decoration: const InputDecoration(
@@ -355,7 +356,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     return (t.length < 10) ? 'Enter valid phone' : null;
                   },
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: Dim.s),
                 TextFormField(
                   controller: addr,
                   decoration: const InputDecoration(
@@ -368,7 +369,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   validator: (v) =>
                   (v == null || v.trim().isEmpty) ? 'Enter address' : null,
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: Dim.s),
                 TextFormField(
                   controller: time,
                   decoration: const InputDecoration(
@@ -459,7 +460,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Image.file(
                     _coverImage!,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                    errorBuilder: (_, __, ___) => SizedBox.shrink(),
                   ),
 
                 // scrim for legibility
@@ -479,14 +480,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         borderRadius: BorderRadius.circular(30),
                         onTap: _pickCoverImage,
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(
+                          padding: EdgeInsets.symmetric(
                               horizontal: 16, vertical: 8),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               const Icon(Icons.photo_camera_rounded,
                                   size: 18, color: Colors.black87),
-                              const SizedBox(width: 8),
+                              SizedBox(width: Dim.s),
                               Text(
                                 _coverImage == null
                                     ? 'Add a cover photo'
@@ -508,9 +509,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         // -------- Header card --------
         Container(
           transform: Matrix4.translationValues(0, -28, 0),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: EdgeInsets.symmetric(horizontal: Dim.gutter),
           child: AppCard(
-            padding: const EdgeInsets.all(14),
+            padding: EdgeInsets.all(14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -541,7 +542,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           child: InkWell(
                             onTap: _pickProfileImage,
                             child: Container(
-                              padding: const EdgeInsets.all(4),
+                              padding: EdgeInsets.all(4),
                               decoration: BoxDecoration(
                                 color: cs.primary,
                                 shape: BoxShape.circle,
@@ -562,7 +563,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: Dim.m),
 
                     // UPDATED: Show both username and shop name
                     Expanded(
@@ -580,7 +581,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           // Show username as subtitle when present
                           if (_fullName.isNotEmpty && _fullName != 'User Name')
                             Padding(
-                              padding: const EdgeInsets.only(top: 2),
+                              padding: EdgeInsets.only(top: 2),
                               child: Text(
                                 _fullName,
                                 style: const TextStyle(
@@ -590,7 +591,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                               ),
                             ),
-                          const SizedBox(height: 4),
+                          SizedBox(height: 4),
                           _IconLine(
                             icon: Icons.phone_rounded,
                             text: _phoneNumber,
@@ -602,7 +603,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               );
                             },
                           ),
-                          const SizedBox(height: 2),
+                          SizedBox(height: 2),
                           _IconLine(
                             icon: Icons.location_on_rounded,
                             text: _address == 'Add your shop address'
@@ -638,7 +639,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 color: isOpen ? Colors.green : Colors.red,
                               ),
                             ),
-                            const SizedBox(width: 6),
+                            SizedBox(width: Dim.s),
                             Switch.adaptive(
                               value: isOpen,
                               onChanged: (v) async {
@@ -656,7 +657,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               size: 16,
                               color: Colors.black54,
                             ),
-                            const SizedBox(width: 6),
+                            SizedBox(width: Dim.s),
                             Text(
                               timings,
                               style: const TextStyle(
@@ -682,7 +683,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 0),
+                SizedBox(height: 0),
               ],
             ),
           ),
@@ -690,7 +691,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
         // -------- KPIs --------
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: EdgeInsets.symmetric(horizontal: Dim.gutter),
           child: Row(
             children: [
               Expanded(
@@ -704,8 +705,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: Row(
                         children: [
                           Icon(Icons.group_rounded, color: cs.primary),
-                          const SizedBox(width: 10),
-                          const Column(
+                          SizedBox(width: Dim.s),
+                          Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
@@ -730,7 +731,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: Dim.m),
               Expanded(
                 child: Material(
                   color: Colors.transparent,
@@ -742,8 +743,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: Row(
                         children: [
                           Icon(Icons.star_rounded, color: cs.primary),
-                          const SizedBox(width: 10),
-                          const Column(
+                          SizedBox(width: Dim.s),
+                          Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
@@ -772,11 +773,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
 
-        const SizedBox(height: 12),
+        SizedBox(height: Dim.s),
 
         // -------- Feature grid --------
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: EdgeInsets.symmetric(horizontal: Dim.gutter),
           child: GridView(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -811,7 +812,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
 
-        const SizedBox(height: 24),
+        SizedBox(height: Dim.l),
       ],
     );
   }
@@ -834,7 +835,7 @@ class AppCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding:
-      padding ?? const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      padding ?? EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(radius),
@@ -876,7 +877,7 @@ class FeatureBox extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, size: 28, color: cs.primary),
-            const SizedBox(height: 8),
+            SizedBox(height: Dim.s),
             Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
           ],
         ),
@@ -895,7 +896,7 @@ class _IconLine extends StatelessWidget {
     final row = Row(
       children: [
         Icon(icon, size: 16, color: Colors.black45),
-        const SizedBox(width: 6),
+        SizedBox(width: Dim.s),
         Expanded(
           child: Text(
             text,
@@ -911,7 +912,7 @@ class _IconLine extends StatelessWidget {
         : InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(6),
-      child: Padding(padding: const EdgeInsets.all(2), child: row),
+      child: Padding(padding: EdgeInsets.all(2), child: row),
     );
   }
 }
@@ -958,7 +959,7 @@ class PostsPage extends StatelessWidget {
     return BaseSlidePage(
       title: 'Posts',
       child: GridView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(Dim.m),
         itemCount: 9,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 3,
@@ -984,16 +985,16 @@ class ProductsPage extends StatelessWidget {
     return BaseSlidePage(
       title: 'Products',
       child: ListView.separated(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(Dim.m),
         itemCount: 8,
-        separatorBuilder: (_, __) => const SizedBox(height: 8),
+        separatorBuilder: (_, __) => SizedBox(height: Dim.s),
         itemBuilder: (_, i) => const AppCard(
           child: Row(
             children: [
               _ThumbIcon(),
-              SizedBox(width: 12),
+              SizedBox(width: Dim.m),
               Expanded(child: Text('Sample Product Name')),
-              SizedBox(width: 8),
+              SizedBox(width: Dim.s),
               Text('₹ 249', style: TextStyle(fontWeight: FontWeight.w700)),
             ],
           ),
@@ -1010,15 +1011,15 @@ class OffersPage extends StatelessWidget {
     return BaseSlidePage(
       title: 'Offers',
       child: ListView.separated(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(Dim.m),
         itemCount: 5,
-        separatorBuilder: (_, __) => const SizedBox(height: 10),
+        separatorBuilder: (_, __) => SizedBox(height: Dim.s),
         itemBuilder: (_, i) => const AppCard(
           radius: 16,
           child: Row(
             children: [
               Icon(Icons.local_offer_rounded),
-              SizedBox(width: 12),
+              SizedBox(width: Dim.m),
               Expanded(child: Text('Flat 20% off • Aug 1 – Aug 31')),
             ],
           ),
@@ -1036,16 +1037,16 @@ class InsightsPage extends StatelessWidget {
       title: 'Insights',
       showCreateButton: false,
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(Dim.m),
         children: const [
           AppCard(
             child: _InsightLine(label: 'Weekly Visitors', value: '120'),
           ),
-          SizedBox(height: 10),
+          SizedBox(height: Dim.s),
           AppCard(
             child: _InsightLine(label: 'Top Product', value: 'Milk (2L)'),
           ),
-          SizedBox(height: 10),
+          SizedBox(height: Dim.s),
           AppCard(
             child: _InsightLine(label: 'Repeat Customers (30d)', value: '36%'),
           ),
@@ -1063,7 +1064,7 @@ class FollowersPage extends StatelessWidget {
       title: 'Followers',
       showCreateButton: false,
       child: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(Dim.m),
         itemCount: 20,
         itemBuilder: (_, i) => ListTile(
           leading: const CircleAvatar(child: Icon(Icons.person)),
@@ -1083,7 +1084,7 @@ class RatingPage extends StatelessWidget {
       title: 'Rating',
       showCreateButton: false,
       child: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(Dim.m),
         itemCount: 20,
         itemBuilder: (_, i) => const AppCard(
           child: ListTile(
@@ -1099,7 +1100,7 @@ class RatingPage extends StatelessWidget {
                     Icon(Icons.star, color: Colors.amber, size: 16),
                     Icon(Icons.star, color: Colors.amber, size: 16),
                     Icon(Icons.star, color: Colors.amber, size: 16),
-                    SizedBox(width: 8),
+                    SizedBox(width: Dim.s),
                     Text('5.0', style: TextStyle(fontWeight: FontWeight.bold)),
                   ],
                 ),
@@ -1147,3 +1148,6 @@ class _InsightLine extends StatelessWidget {
     );
   }
 }
+
+
+

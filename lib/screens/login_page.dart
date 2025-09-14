@@ -7,8 +7,7 @@ import 'package:my_business_app/screens/business_registration_page.dart';
 
 class BusinessLoginPage extends StatefulWidget {
   final VoidCallback onFinished;
-  const BusinessLoginPage({Key? key, required this.onFinished})
-      : super(key: key);
+  const BusinessLoginPage({super.key, required this.onFinished});
 
   @override
   State<BusinessLoginPage> createState() => _BusinessLoginPageState();
@@ -176,7 +175,7 @@ class _BusinessLoginPageState extends State<BusinessLoginPage> {
                             SizedBox(
                               width: 80,
                               child: DropdownButtonFormField<String>(
-                                value: _countryCode,
+                                initialValue: _countryCode,
                                 items: ['+91', '+1', '+44']
                                     .map((c) => DropdownMenuItem(value: c, child: Text(c)))
                                     .toList(),

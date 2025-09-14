@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../config/save_data.dart';
 import '../core/language/generated/app_localizations.dart';
+import 'package:my_business_app/core/theme/dim.dart';
 
 class BusinessRegistrationPage extends StatefulWidget {
   final VoidCallback onFinished;
@@ -149,9 +150,9 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
             Positioned(bottom: 100, left: 100, child: _floatingCircle(40)),
             Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(20),
                 child: Container(
-                  padding: const EdgeInsets.all(24),
+                  padding: EdgeInsets.all(24),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.95),
                     borderRadius: BorderRadius.circular(30),
@@ -169,7 +170,7 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         _logoBox(),
-                        const SizedBox(height: 16),
+                        SizedBox(height: Dim.m),
                         Text(
                           AppLocalizations.of(context)!.joinOurNetwork,
                           style: TextStyle(
@@ -178,12 +179,12 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
                             color: Colors.grey[800],
                           ),
                         ),
-                        const SizedBox(height: 6),
+                        SizedBox(height: 6),
                         Text(
                           AppLocalizations.of(context)!.registerYourBusinessInMinutes,
                           style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                         ),
-                        const SizedBox(height: 24),
+                        SizedBox(height: Dim.l),
 
                         _buildTextField(
                           controller: _fullNameController,
@@ -215,7 +216,7 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
                               : null,
                           decoration: _dropdownDecoration(),
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: Dim.m),
 
                         Row(
                           children: [
@@ -230,7 +231,7 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
                                 decoration: _dropdownDecoration(),
                               ),
                             ),
-                            const SizedBox(width: 10),
+                            SizedBox(width: Dim.s),
                             Expanded(
                               child: TextFormField(
                                 controller: _mobileController,
@@ -269,10 +270,10 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: Dim.m),
 
                         _otpBox(context),
-                        const SizedBox(height: 20),
+                        SizedBox(height: Dim.l),
 
                         // Create Account Button
                         SizedBox(
@@ -280,7 +281,7 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
                           child: ElevatedButton(
                             onPressed: _isLoading ? null : _submit,
                             style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              padding: EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
                               ),
@@ -295,7 +296,7 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: Dim.m),
 
                         // Back to Login Button
                         if (widget.onSwitchToLogin != null)
@@ -304,7 +305,7 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
                             child: OutlinedButton(
                               onPressed: widget.onSwitchToLogin,
                               style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding: EdgeInsets.symmetric(vertical: 16),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(16),
                                 ),
@@ -320,7 +321,7 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
                               ),
                             ),
                           ),
-                        const SizedBox(height: 12),
+                        SizedBox(height: Dim.s),
                         GestureDetector(
                           onTap: () => ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text("Terms page coming soon...")),
@@ -374,7 +375,7 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
 
   Widget _otpBox(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(Dim.m),
       decoration: BoxDecoration(
         color: Colors.grey[100],
         borderRadius: BorderRadius.circular(16),
@@ -384,7 +385,7 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
         children: [
           Text(AppLocalizations.of(context)!.enterOtp,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          const SizedBox(height: 8),
+          SizedBox(height: Dim.s),
           TextFormField(
             controller: _otpController,
             maxLength: 6,
@@ -425,7 +426,7 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
 
   InputDecoration _dropdownDecoration() {
     return InputDecoration(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
       filled: true,
       fillColor: Colors.grey[100],
@@ -440,7 +441,7 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
     String? Function(String?)? validator,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: EdgeInsets.symmetric(vertical: 8.0),
       child: TextFormField(
         controller: controller,
         maxLength: maxLength,
@@ -520,3 +521,6 @@ String _getServiceLabel(BuildContext context, String key) {
       return key;
   }
 }
+
+
+

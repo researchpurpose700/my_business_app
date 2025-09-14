@@ -134,7 +134,7 @@ class _CameraPageState extends State<CameraPage> {
             child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
               IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close, color: Colors.white)),
               if (isRecording)
-                Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(15)), child: Text('${recordingSeconds}s', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                Container(padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(15)), child: Text('${recordingSeconds}s', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
             ]),
           ),
           Positioned(
@@ -151,3 +151,4 @@ class _CameraPageState extends State<CameraPage> {
     );
   }
 }
+

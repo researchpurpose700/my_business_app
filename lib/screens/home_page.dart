@@ -182,7 +182,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       child: Scaffold(
         body: SafeArea(
           child: SingleChildScrollView(
-            padding:  EdgeInsets.all(16).copyWith(left: Dim.gutter, right: Dim.gutter),
+            padding:  EdgeInsets.all(Dim.m).copyWith(left: Dim.gutter, right: Dim.gutter),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               HeaderSection(onCreatePressed: _openCreateModal),
                SizedBox(height: Dim.m),
@@ -311,14 +311,14 @@ class _StoryCardState extends State<StoryCard> with SingleTickerProviderStateMix
           child: Image.network(s.imageUrl!, height: 120, width: double.infinity, fit: BoxFit.cover, errorBuilder: (c, e, st) => Container(height: 120, color: Colors.grey.shade200, alignment: Alignment.center, child: Icon(Icons.broken_image_outlined, color: Colors.grey.shade400, size: 48))),
         );
       }
-      return const SizedBox.shrink();
+      return SizedBox.shrink();
     }
 
     return InkWell(
       onTap: widget.onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 6),
+        margin: EdgeInsets.symmetric(vertical: 6),
         decoration: BoxDecoration(
           color: s.isExpired ? Colors.grey.shade100 : colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
@@ -332,7 +332,7 @@ class _StoryCardState extends State<StoryCard> with SingleTickerProviderStateMix
           ),
           Expanded(
             child: Padding(
-              padding:  EdgeInsets.all(16).copyWith(left: Dim.cardPadding, right: Dim.cardPadding),
+              padding:  EdgeInsets.all(Dim.m).copyWith(left: Dim.cardPadding, right: Dim.cardPadding),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Row(children: [
                   GestureDetector(
@@ -351,7 +351,7 @@ class _StoryCardState extends State<StoryCard> with SingleTickerProviderStateMix
                             color: colorScheme.primary,
                             shape: const CircleBorder(),
                             elevation: 4,
-                            child: InkWell(onTap: widget.onProfileTap, customBorder: const CircleBorder(), child: const SizedBox(width: 36, height: 36, child: Icon(Icons.add_rounded, size: 20, color: Colors.white)))),
+                            child: InkWell(onTap: widget.onProfileTap, customBorder: const CircleBorder(), child: SizedBox(width: 36, height: 36, child: Icon(Icons.add_rounded, size: 20, color: Colors.white)))),
                         ),
                       ]),
                     ),
@@ -409,7 +409,7 @@ class _ActionPill extends StatelessWidget {
           borderRadius: BorderRadius.circular(24),
           child: Container(
             constraints: const BoxConstraints(minHeight: 40),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
               Icon(icon, size: 18, color: colorScheme.onSurface.withOpacity(0.7)),
                SizedBox(width: Dim.s),
@@ -528,7 +528,7 @@ class _StoryInsightsPageState extends State<StoryInsightsPage> {
       appBar: AppBar(title: const Text('Story Insights')),
       body: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Padding(
-          padding:  EdgeInsets.all(16).copyWith(left: Dim.gutter, right: Dim.gutter),
+          padding:  EdgeInsets.all(Dim.m).copyWith(left: Dim.gutter, right: Dim.gutter),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('Story Content', style: textTheme.titleSmall),
              SizedBox(height: Dim.s),
@@ -594,7 +594,7 @@ class _StoryInsightsPageState extends State<StoryInsightsPage> {
                   ]),
                 )
               : ListView.separated(
-                  padding:  EdgeInsets.all(16).copyWith(left: Dim.gutter, right: Dim.gutter),
+                  padding:  EdgeInsets.all(Dim.m).copyWith(left: Dim.gutter, right: Dim.gutter),
                   itemBuilder: (c, index) {
                     final v = _filtered[index];
                     final firstName = _getFirstName(v.name);
@@ -670,8 +670,8 @@ class SimpleStatCard extends StatelessWidget {
       decoration: BoxDecoration(color: colorScheme.surface, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 4))]),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(10)), child: Icon(icon, color: color, size: 20)),
-          const SizedBox(width: 10),
+          Container(padding: EdgeInsets.all(Dim.s), decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(10)), child: Icon(icon, color: color, size: 20)),
+          SizedBox(width: Dim.s),
           Text(title, style: textTheme.bodySmall?.copyWith(color: Colors.black54)),
         ]),
          SizedBox(height: Dim.s),
@@ -714,7 +714,7 @@ class PromotionalCardsWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin:  EdgeInsets.only(top: Dim.s),
-      padding: const EdgeInsets.all(18), // kept 18 for gradient card density, change to Dim.m if preferred
+      padding: EdgeInsets.all(18), // kept 18 for gradient card density, change to Dim.m if preferred
       decoration: BoxDecoration(
         gradient: LinearGradient(colors: [Colors.teal.shade400, Colors.blue.shade600], begin: Alignment.topLeft, end: Alignment.bottomRight),
         borderRadius: BorderRadius.circular(16),
@@ -797,7 +797,7 @@ class _CreatePostModalState extends State<CreatePostModal> {
             Expanded(
               child: ElevatedButton(
                 onPressed: _loading ? null : _create,
-                child: _loading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Share Story'),
+                child: _loading ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Share Story'),
               ),
             ),
           ]),
@@ -807,3 +807,5 @@ class _CreatePostModalState extends State<CreatePostModal> {
     );
   }
 }
+
+
