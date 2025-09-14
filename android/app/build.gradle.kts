@@ -4,6 +4,12 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+val flutterMinSdk: Int = (project.findProperty("flutter.minSdkVersion") ?: "21").toString().toInt()
+val flutterTargetSdk: Int = (project.findProperty("flutter.targetSdkVersion") ?: "33").toString().toInt()
+
+
+
+
 android {
     namespace = "com.example.my_business_app"
     compileSdk = 36
@@ -19,13 +25,16 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.my_business_app"
-        minSdk = 23
-        targetSdk = 33
-        versionCode = 1
-        versionName = "1.0"
-        multiDexEnabled = true
-    }
+    applicationId = "com.example.my_business_app"
+    minSdk = flutterMinSdk
+    targetSdk = flutterTargetSdk
+    versionCode = 1
+    versionName = "1.0"
+    multiDexEnabled = true
+}
+
+
+
 
     buildTypes {
         getByName("release") {

@@ -1,3 +1,7 @@
+// Define Flutter SDK versions as project extras
+extra["flutter.minSdkVersion"] = 21
+extra["flutter.targetSdkVersion"] = 33
+
 allprojects {
     repositories {
         google()

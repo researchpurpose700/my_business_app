@@ -6,6 +6,10 @@ import 'screens/language_selection_page.dart';
 import 'core/theme/colors.dart';
 import 'screens/main_screen.dart';
 import 'screens/login_page.dart';
+import 'screens/home_page.dart';      // file you pasted: lib/pages/home_page.dart
+import 'screens/camera_page.dart';
+         // replace with your camera file path if different
+
 
 /// App onboarding flow states
 enum AppFlowState { languageSelection, registration, main }
@@ -99,6 +103,14 @@ class _MyAppState extends State<MyApp> {
           ),
         ),
       ),
+
+      routes: {
+  '/camera': (c) => CameraPage(onStoryCreated: (s) {
+        // optional: handle created story globally, or leave empty
+      }),
+  '/home_custom': (c) => const HomePage(), // quick test route to open the new page
+},
+
 
       // Decide home screen based on current (persisted) flow state
       home: () {

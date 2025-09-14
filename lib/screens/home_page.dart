@@ -1,11 +1,11 @@
-import 'package:flutter/material.dart';
-import 'package:camera/camera.dart';
-import 'package:video_player/video_player.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'dart:io';
-import 'dart:async';
 
-// Data Models
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:my_business_app/core/theme/dim.dart';
+ // adjust path if your package structure differs
+
+/// Merged models used by the page.
 class Story {
   final String id;
   final String content;
@@ -13,9 +13,12 @@ class Story {
   final int views;
   final int clicks;
   final int likes;
+  final int shares;
   final List<Comment> comments;
-  final String? imagePath;
-  final String? videoPath;
+  final DateTime? expiresAt;
+  final String? imageUrl; // remote
+  final String? imagePath; // local file
+  final String? videoPath; // local file
 
   Story({
     required this.id,
@@ -24,770 +27,782 @@ class Story {
     required this.views,
     required this.clicks,
     required this.likes,
+    this.shares = 0,
     required this.comments,
+    this.expiresAt,
+    this.imageUrl,
     this.imagePath,
     this.videoPath,
   });
 
-  bool get isVideo => videoPath != null;
+  bool get isExpired => expiresAt != null && DateTime.now().isAfter(expiresAt!);
 }
 
 class Comment {
+  final String id;
   final String userName;
   final String content;
   final DateTime createdAt;
 
   Comment({
+    required this.id,
     required this.userName,
     required this.content,
     required this.createdAt,
   });
 }
 
-class Service {
+class ViewerInteraction {
+  final String userId;
   final String name;
-  final int orders;
-  final double rating;
-  final double price;
-  final IconData icon;
-  final Color color;
+  final String? avatarUrl;
+  final DateTime viewedAt;
+  final DateTime? likedAt;
+  final DateTime? clickedAt;
+  final DateTime? sharedAt;
+  final Comment? comment;
 
-  Service({
+  ViewerInteraction({
+    required this.userId,
     required this.name,
-    required this.orders,
-    required this.rating,
-    required this.price,
-    required this.icon,
-    required this.color,
+    required this.viewedAt,
+    this.avatarUrl,
+    this.likedAt,
+    this.clickedAt,
+    this.sharedAt,
+    this.comment,
   });
 }
 
-// Main Home Page
+/// HomePage: drop-in replacement.
 class HomePage extends StatefulWidget {
+  const HomePage({super.key});
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
-  Story currentStory = Story(
-    id: '1',
-    content: 'Just completed a beautiful kitchen cabinet project!',
-    postedAt: DateTime.now().subtract(Duration(hours: 2)),
-    views: 15,
-    clicks: 2,
-    likes: 10,
-    comments: [
-      Comment(
-        userName: 'Priya Sharma',
-        content: 'Amazing work! Can you do something similar for my kitchen?',
-        createdAt: DateTime.now().subtract(Duration(hours: 1)),
-      ),
-      Comment(
-        userName: 'Rohit Kumar',
-        content: 'What\'s the price range for this type of cabinet?',
-        createdAt: DateTime.now().subtract(Duration(minutes: 45)),
-      ),
-    ],
-  );
+class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
+  late Story currentStory;
 
-  List<Service> services = [
-    Service(
-      name: 'Kitchen Cabinet Making',
-      orders: 25,
-      rating: 4.8,
-      price: 8500,
-      icon: Icons.build,
-      color: Colors.orange,
-    ),
-    Service(
-      name: 'Plumbing Services',
-      orders: 18,
-      rating: 4.6,
-      price: 2500,
-      icon: Icons.plumbing,
-      color: Colors.blue,
-    ),
-    Service(
-      name: 'Electrical Work',
-      orders: 12,
-      rating: 4.7,
-      price: 3200,
-      icon: Icons.electrical_services,
-      color: Colors.amber,
-    ),
+  final List<Map<String, dynamic>> sampleMostOrdered = [
+    {
+      'name': 'Kitchen Cabinet Making',
+      'orders': 25,
+      'price': 8500,
+      'icon': Icons.build_circle_outlined,
+      'color': Colors.deepOrange
+    },
+    {
+      'name': 'Nirma Soap Wholesale',
+      'orders': 18,
+      'price': 1200,
+      'icon': Icons.shopping_bag_outlined,
+      'color': Colors.blue
+    },
+    {
+      'name': 'Electrician Services',
+      'orders': 12,
+      'price': 700,
+      'icon': Icons.electrical_services_outlined,
+      'color': Colors.teal
+    }
   ];
 
-  String getTimeAgo(DateTime dateTime) {
-    final difference = DateTime.now().difference(dateTime);
-    if (difference.inHours > 0) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m ago';
+  @override
+  void initState() {
+    super.initState();
+    currentStory = Story(
+      id: '1',
+      content: 'Just completed a beautiful kitchen cabinet project! Check out my latest work...',
+      postedAt: DateTime.now().subtract(const Duration(hours: 2)),
+      views: 15,
+      clicks: 2,
+      likes: 10,
+      shares: 3,
+      comments: [
+        Comment(id: 'c1', userName: 'Priya Sharma', content: 'Wow! This looks amazing.', createdAt: DateTime.now().subtract(const Duration(hours: 1, minutes: 30))),
+        Comment(id: 'c2', userName: 'Rohit Kumar', content: 'Great work! What\'s the price range?', createdAt: DateTime.now().subtract(const Duration(minutes: 45))),
+      ],
+      expiresAt: DateTime.now().add(const Duration(hours: 22)),
+      imageUrl: 'https://www.gstatic.com/flutter-onestack-prototype/genui/example_1.jpg',
+    );
+  }
+
+  Future<void> _openCamera() async {
+    try {
+      await Navigator.of(context).pushNamed('/camera');
+    } catch (_) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Camera route not registered.')));
     }
+  }
+
+  void _openStoryInsights() {
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => StoryInsightsPage(story: currentStory)));
+  }
+
+  void _openCreateModal() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (context) => CreatePostModal(
+        onStoryCreated: (Story s) => setState(() => currentStory = s),
+        onRequestCamera: _openCamera,
+      ),
+    );
+  }
+
+  String _timeAgo(DateTime t) {
+    final d = DateTime.now().difference(t);
+    if (d.inDays > 0) return '${d.inDays}d ago';
+    if (d.inHours > 0) return '${d.inHours}h ago';
+    if (d.inMinutes > 0) return '${d.inMinutes}m ago';
+    return 'just now';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // theme + typography identical to your DartPad snippet
+    final Color primaryColor = Colors.deepPurple;
+    final colorScheme = ColorScheme.fromSeed(seedColor: primaryColor, primary: primaryColor, onPrimary: Colors.white);
+    final appTextTheme = GoogleFonts.montserratTextTheme(ThemeData.light().textTheme).copyWith(
+      titleLarge: GoogleFonts.montserrat(fontSize: 24, fontWeight: FontWeight.w800, color: Colors.black87),
+      titleMedium: GoogleFonts.montserrat(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.black87),
+      titleSmall: GoogleFonts.montserrat(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black87),
+    );
+
+    final theme = Theme.of(context).copyWith(
+      colorScheme: colorScheme,
+      textTheme: appTextTheme,
+      useMaterial3: true,
+    );
+
+    return Theme(
+      data: theme,
+      child: Scaffold(
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding:  EdgeInsets.all(16).copyWith(left: Dim.gutter, right: Dim.gutter),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              HeaderSection(onCreatePressed: _openCreateModal),
+               SizedBox(height: Dim.m),
+              StoryCard(story: currentStory, onTap: _openStoryInsights, onProfileTap: _openCreateModal),
+               SizedBox(height: Dim.l),
+              Text("Today's Overview", style: theme.textTheme.titleMedium),
+               SizedBox(height: Dim.s),
+              const StatsCardsWidget(),
+               SizedBox(height: Dim.l),
+              Text('Most Ordered', style: theme.textTheme.titleMedium),
+               SizedBox(height: Dim.s),
+              ...sampleMostOrdered.map((m) => OrderedItemPreview(
+                    name: m['name'] as String,
+                    ordersText: '${m['orders']} orders this month',
+                    priceText: '₹${m['price']}',
+                    icon: m['icon'] as IconData,
+                    color: m['color'] as Color,
+                  )),
+               SizedBox(height: Dim.m),
+              const PromotionalCardsWidget(),
+               SizedBox(height: Dim.xl),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/* ---------------- Header ---------------- */
+class HeaderSection extends StatelessWidget {
+  final VoidCallback onCreatePressed;
+  const HeaderSection({super.key, required this.onCreatePressed});
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('Townzy Partners', style: textTheme.titleLarge),
+         SizedBox(height: Dim.xs),
+        Text('Good morning, Raj', style: textTheme.bodyMedium),
+      ]),
+      Row(children: [
+        _HeaderActionButton(tooltip: 'Search', onPressed: () {}, icon: Icons.search),
+         SizedBox(width: Dim.s),
+        _HeaderActionButton(tooltip: 'Notifications', onPressed: () {}, icon: Icons.notifications_outlined),
+         SizedBox(width: Dim.s),
+        _HeaderActionButton(tooltip: 'Create', onPressed: onCreatePressed, icon: Icons.add_box_outlined),
+      ]),
+    ]);
+  }
+}
+
+class _HeaderActionButton extends StatelessWidget {
+  final String tooltip;
+  final VoidCallback onPressed;
+  final IconData icon;
+  const _HeaderActionButton({required this.tooltip, required this.onPressed, required this.icon});
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Theme.of(context).colorScheme.surface,
+      elevation: 1,
+      shape: const CircleBorder(),
+      clipBehavior: Clip.antiAlias,
+      child: IconButton(tooltip: tooltip, onPressed: onPressed, icon: Icon(icon, color: Theme.of(context).colorScheme.onSurface)),
+    );
+  }
+}
+
+/* ---------------- Story Card ---------------- */
+class StoryCard extends StatefulWidget {
+  final Story story;
+  final VoidCallback onTap;
+  final VoidCallback onProfileTap;
+  final VoidCallback? onShareTap;
+  const StoryCard({super.key, required this.story, required this.onTap, required this.onProfileTap, this.onShareTap});
+  @override
+  State<StoryCard> createState() => _StoryCardState();
+}
+
+class _StoryCardState extends State<StoryCard> with SingleTickerProviderStateMixin {
+  late final AnimationController _avatarController;
+  late final Animation<double> _avatarScale;
+
+  @override
+  void initState() {
+    super.initState();
+    _avatarController = AnimationController(vsync: this, duration: const Duration(milliseconds: 120), lowerBound: 0.92, upperBound: 1.0, value: 1.0);
+    _avatarScale = CurvedAnimation(parent: _avatarController, curve: Curves.easeOut);
+  }
+
+  @override
+  void dispose() {
+    _avatarController.dispose();
+    super.dispose();
+  }
+
+  void _avatarDown(TapDownDetails _) => _avatarController.animateTo(0.92, duration: const Duration(milliseconds: 80));
+  void _avatarUp(TapUpDetails _) {
+    _avatarController.animateTo(1.0, duration: const Duration(milliseconds: 120));
+    widget.onProfileTap();
+  }
+
+  String _timeAgo(DateTime t) {
+    final Duration d = DateTime.now().difference(t);
+    if (d.inDays > 0) return '${d.inDays}d ago';
+    if (d.inHours > 0) return '${d.inHours}h ago';
+    if (d.inMinutes > 0) return '${d.inMinutes}m ago';
+    return 'just now';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = widget.story;
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    Widget imageWidget() {
+      if (s.imagePath != null && s.imagePath!.isNotEmpty) {
+        return ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.file(File(s.imagePath!), height: 120, width: double.infinity, fit: BoxFit.cover));
+      }
+      if (s.imageUrl != null && s.imageUrl!.isNotEmpty) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.network(s.imageUrl!, height: 120, width: double.infinity, fit: BoxFit.cover, errorBuilder: (c, e, st) => Container(height: 120, color: Colors.grey.shade200, alignment: Alignment.center, child: Icon(Icons.broken_image_outlined, color: Colors.grey.shade400, size: 48))),
+        );
+      }
+      return const SizedBox.shrink();
+    }
+
+    return InkWell(
+      onTap: widget.onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 6),
+        decoration: BoxDecoration(
+          color: s.isExpired ? Colors.grey.shade100 : colorScheme.surface,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 6))],
+        ),
+        child: Row(children: [
+          Container(
+            width: 8,
+            height: 140,
+            decoration: BoxDecoration(gradient: LinearGradient(colors: [colorScheme.primary, colorScheme.primary.withOpacity(0.7)], begin: Alignment.topCenter, end: Alignment.bottomCenter), borderRadius: const BorderRadius.only(topLeft: Radius.circular(16), bottomLeft: Radius.circular(16))),
+          ),
+          Expanded(
+            child: Padding(
+              padding:  EdgeInsets.all(16).copyWith(left: Dim.cardPadding, right: Dim.cardPadding),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(children: [
+                  GestureDetector(
+                    onTapDown: _avatarDown,
+                    onTapUp: _avatarUp,
+                    onTapCancel: () => _avatarController.animateTo(1.0, duration: const Duration(milliseconds: 80)),
+                    behavior: HitTestBehavior.translucent,
+                    child: ScaleTransition(
+                      scale: _avatarScale,
+                      child: Stack(clipBehavior: Clip.none, children: [
+                        CircleAvatar(radius: 28, backgroundColor: colorScheme.primary.withOpacity(0.2), child: Icon(Icons.person_rounded, color: colorScheme.primary, size: 32)),
+                        Positioned(
+                          right: -8,
+                          bottom: -8,
+                          child: Material(
+                            color: colorScheme.primary,
+                            shape: const CircleBorder(),
+                            elevation: 4,
+                            child: InkWell(onTap: widget.onProfileTap, customBorder: const CircleBorder(), child: const SizedBox(width: 36, height: 36, child: Icon(Icons.add_rounded, size: 20, color: Colors.white)))),
+                        ),
+                      ]),
+                    ),
+                  ),
+                   SizedBox(width: Dim.m),
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('Your Story', style: textTheme.titleSmall),
+                       SizedBox(height: Dim.xs),
+                      Text('Posted ${_timeAgo(s.postedAt)}', style: textTheme.bodySmall),
+                    ]),
+                  ),
+                ]),
+                if (s.imageUrl != null || s.imagePath != null) ...[
+                   SizedBox(height: Dim.s),
+                  imageWidget(),
+                ],
+                 SizedBox(height: Dim.s),
+                Text(s.content, maxLines: 2, overflow: TextOverflow.ellipsis, style: textTheme.bodyMedium),
+                 SizedBox(height: Dim.s),
+                Wrap(spacing: Dim.s, runSpacing: Dim.s, children: <Widget>[
+                  _ActionPill(icon: Icons.favorite_border, label: '${s.likes}', semanticLabel: 'Likes', onTap: widget.onTap),
+                  _ActionPill(icon: Icons.chat_bubble_outline, label: '${s.comments.length}', semanticLabel: 'Comments', onTap: widget.onTap),
+                  _ActionPill(icon: Icons.visibility_outlined, label: '${s.views}', semanticLabel: 'Views'),
+                  _ActionPill(icon: Icons.touch_app_outlined, label: '${s.clicks}', semanticLabel: 'Clicks'),
+                  _ActionPill(icon: Icons.share_outlined, label: '${s.shares}', semanticLabel: 'Shares', onTap: widget.onShareTap),
+                ]),
+              ]),
+            ),
+          ),
+        ]),
+      ),
+    );
+  }
+}
+
+class _ActionPill extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+  final String semanticLabel;
+  const _ActionPill({required this.icon, required this.label, this.onTap, required this.semanticLabel});
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    return Semantics(
+      button: onTap != null,
+      label: semanticLabel,
+      child: Material(
+        color: colorScheme.surface.withOpacity(0.8),
+        borderRadius: BorderRadius.circular(24),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(24),
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 40),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Icon(icon, size: 18, color: colorScheme.onSurface.withOpacity(0.7)),
+               SizedBox(width: Dim.s),
+              Text(label, style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurface.withOpacity(0.8))),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/* ---------------- Story Insights Page ---------------- */
+enum InsightsFilter { allViews, likes, comments, clicks, shares }
+
+class StoryInsightsPage extends StatefulWidget {
+  final Story story;
+  const StoryInsightsPage({super.key, required this.story});
+  @override
+  State<StoryInsightsPage> createState() => _StoryInsightsPageState();
+}
+
+class _StoryInsightsPageState extends State<StoryInsightsPage> {
+  late final List<ViewerInteraction> _allInteractions;
+  InsightsFilter _filter = InsightsFilter.allViews;
+
+  @override
+  void initState() {
+    super.initState();
+    _allInteractions = _buildSampleInteractions(widget.story);
+  }
+
+  static List<ViewerInteraction> _buildSampleInteractions(Story s) {
+    final now = DateTime.now();
+    return <ViewerInteraction>[
+      ViewerInteraction(userId: 'u1', name: 'Priya Sharma', viewedAt: now.subtract(const Duration(hours: 2, minutes: 10)), likedAt: now.subtract(const Duration(hours: 1, minutes: 45)), comment: Comment(id: 'c1', userName: 'Priya Sharma', content: 'Wow! This looks amazing.', createdAt: now.subtract(const Duration(hours: 1, minutes: 30))), clickedAt: now.subtract(const Duration(hours: 1, minutes: 40)), sharedAt: now.subtract(const Duration(hours: 1, minutes: 20))),
+      ViewerInteraction(userId: 'u2', name: 'Rohit Kumar', viewedAt: now.subtract(const Duration(hours: 1, minutes: 10)), likedAt: null, comment: Comment(id: 'c2', userName: 'Rohit Kumar', content: 'Great work! What\'s the price range?', createdAt: now.subtract(const Duration(minutes: 45))), clickedAt: null, sharedAt: null),
+      ViewerInteraction(userId: 'u3', name: 'Ankit Verma', viewedAt: now.subtract(const Duration(hours: 5)), likedAt: now.subtract(const Duration(hours: 4, minutes: 50)), comment: null, clickedAt: now.subtract(const Duration(hours: 4, minutes: 30)), sharedAt: null),
+      ViewerInteraction(userId: 'u4', name: 'Sneha Patel', viewedAt: now.subtract(const Duration(minutes: 20)), likedAt: null, comment: null, clickedAt: null, sharedAt: now.subtract(const Duration(minutes: 10))),
+    ];
+  }
+
+  List<ViewerInteraction> get _filtered {
+    switch (_filter) {
+      case InsightsFilter.likes:
+        return _allInteractions.where((v) => v.likedAt != null).toList();
+      case InsightsFilter.comments:
+        return _allInteractions.where((v) => v.comment != null).toList();
+      case InsightsFilter.clicks:
+        return _allInteractions.where((v) => v.clickedAt != null).toList();
+      case InsightsFilter.shares:
+        return _allInteractions.where((v) => v.sharedAt != null).toList();
+      case InsightsFilter.allViews:
+        return _allInteractions;
+    }
+  }
+
+  void _setFilter(InsightsFilter f) => setState(() => _filter = f);
+
+  String _timeAgo(DateTime t) {
+    final d = DateTime.now().difference(t);
+    if (d.inDays > 0) return '${d.inDays}d ago';
+    if (d.inHours > 0) return '${d.inHours}h ago';
+    if (d.inMinutes > 0) return '${d.inMinutes}m ago';
     return 'now';
   }
 
-  void showStoryDetails() {
-    showModalBottomSheet(
+  String _getFirstName(String fullName) {
+    final parts = fullName.split(' ');
+    return parts.isNotEmpty ? parts.first : '';
+  }
+
+  List<ViewerInteraction> get _topEngagers {
+    final engagers = _allInteractions.where((v) => v.likedAt != null || v.comment != null).toList();
+    engagers.sort((a, b) {
+      final at = a.likedAt ?? a.comment?.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final bt = b.likedAt ?? b.comment?.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+      return bt.compareTo(at);
+    });
+    return engagers.take(10).toList();
+  }
+
+  void _openUserDetails(ViewerInteraction v) {
+    showDialog<void>(
       context: context,
-      isScrollControlled: true,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.7,
-        padding: EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Story Details', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                IconButton(onPressed: () => Navigator.pop(context), icon: Icon(Icons.close)),
-              ],
-            ),
-            SizedBox(height: 16),
-            Text(currentStory.content, style: TextStyle(fontSize: 16)),
-            SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildStatItem('Views', currentStory.views, Icons.visibility, Colors.blue),
-                _buildStatItem('Clicks', currentStory.clicks, Icons.touch_app, Colors.green),
-                _buildStatItem('Likes', currentStory.likes, Icons.favorite, Colors.red),
-              ],
-            ),
-            SizedBox(height: 20),
-            Text('Comments (${currentStory.comments.length})',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            SizedBox(height: 10),
-            Expanded(
-              child: ListView.builder(
-                itemCount: currentStory.comments.length,
-                itemBuilder: (context, index) {
-                  final comment = currentStory.comments[index];
-                  return Container(
-                    margin: EdgeInsets.only(bottom: 12),
-                    padding: EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[50],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(comment.userName, style: TextStyle(fontWeight: FontWeight.bold)),
-                        Text(getTimeAgo(comment.createdAt), style: TextStyle(color: Colors.grey, fontSize: 12)),
-                        SizedBox(height: 4),
-                        Text(comment.content),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
+      builder: (c) => AlertDialog(
+        title: Text(_getFirstName(v.name), style: Theme.of(context).textTheme.titleSmall),
+        content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Viewed: ${_timeAgo(v.viewedAt)}', style: Theme.of(context).textTheme.bodyMedium),
+          if (v.likedAt != null) Text('Liked: ${_timeAgo(v.likedAt!)}', style: Theme.of(context).textTheme.bodyMedium),
+          if (v.clickedAt != null) Text('Clicked: ${_timeAgo(v.clickedAt!)}', style: Theme.of(context).textTheme.bodyMedium),
+          if (v.sharedAt != null) Text('Shared: ${_timeAgo(v.sharedAt!)}', style: Theme.of(context).textTheme.bodyMedium),
+          if (v.comment != null) ...[
+             SizedBox(height: Dim.s),
+            Text('Comment:', style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold)),
+            Text(v.comment!.content, style: Theme.of(context).textTheme.bodyMedium),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatItem(String label, int value, IconData icon, Color color) {
-    return Column(
-      children: [
-        Icon(icon, color: color, size: 24),
-        SizedBox(height: 4),
-        Text(value.toString(), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color)),
-        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey)),
-      ],
-    );
-  }
-
-  void showCreatePost() {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => Container(
-        padding: EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Create Story', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    _openCamera();
-                  },
-                  icon: Icon(Icons.camera_alt),
-                  label: Text('Camera'),
-                ),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    _showTextPost();
-                  },
-                  icon: Icon(Icons.edit),
-                  label: Text('Text Post'),
-                ),
-              ],
-            ),
-            SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _openCamera() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => CameraPage(
-          onStoryCreated: (story) {
-            setState(() {
-              currentStory = story;
-            });
-          },
-        ),
-      ),
-    );
-  }
-
-  void _showTextPost() {
-    final textController = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Create Text Story'),
-        content: TextField(
-          controller: textController,
-          maxLines: 3,
-          decoration: InputDecoration(hintText: 'What\'s happening?'),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text('Cancel')),
-          TextButton(
-            onPressed: () {
-              if (textController.text.trim().isNotEmpty) {
-                setState(() {
-                  currentStory = Story(
-                    id: DateTime.now().millisecondsSinceEpoch.toString(),
-                    content: textController.text.trim(),
-                    postedAt: DateTime.now(),
-                    views: 0,
-                    clicks: 0,
-                    likes: 0,
-                    comments: [],
-                  );
-                });
-              }
-              Navigator.pop(context);
-            },
-            child: Text('Post'),
-          ),
-        ],
+        ]),
+        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final s = widget.story;
+    final allViewsCount = _allInteractions.length;
+    final likesCount = _allInteractions.where((v) => v.likedAt != null).length;
+    final commentsCount = _allInteractions.where((v) => v.comment != null).length;
+    final clicksCount = _allInteractions.where((v) => v.clickedAt != null).length;
+    final sharesCount = _allInteractions.where((v) => v.sharedAt != null).length;
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Townzy Partners', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                        Text('Good morning, Raj', style: TextStyle(color: Colors.grey[600])),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        IconButton(onPressed: () {}, icon: Icon(Icons.notifications_outlined)),
-                        Stack(
-                          children: [
-                            IconButton(onPressed: () {}, icon: Icon(Icons.message_outlined)),
-                            Positioned(
-                              right: 8, top: 8,
-                              child: Container(
-                                width: 16, height: 16,
-                                decoration: BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                                child: Center(child: Text('3', style: TextStyle(color: Colors.white, fontSize: 10))),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-
-                SizedBox(height: 20),
-
-                // Story Card
-                GestureDetector(
-                  onTap: showStoryDetails,
-                  child: Container(
-                    padding: EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(colors: [Colors.blue[400]!, Colors.purple[400]!]),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Row(
-                      children: [
-                        GestureDetector(
-                          onTap: showCreatePost,
-                          child: CircleAvatar(
-                            radius: 30,
-                            backgroundColor: Colors.white,
-                            child: Icon(Icons.person, color: Colors.grey),
-                          ),
-                        ),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Your Story', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                              Text('Posted ${getTimeAgo(currentStory.postedAt)}', style: TextStyle(color: Colors.white70, fontSize: 12)),
-                              Text('${currentStory.views} views • ${currentStory.likes} likes', style: TextStyle(color: Colors.white70, fontSize: 12)),
-                              SizedBox(height: 8),
-                              Text(currentStory.content, style: TextStyle(color: Colors.white)),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                SizedBox(height: 24),
-
-                // Today's Overview
-                Text("Today's Overview", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                SizedBox(height: 16),
-
-                // Stats Cards
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildStatsCard('Orders Today', '12', '+3 from yesterday', Icons.shopping_bag, Colors.green),
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: _buildStatsCard('Earnings Today', '₹4,850', '+₹1,200 from yesterday', Icons.account_balance_wallet, Colors.blue),
-                    ),
-                  ],
-                ),
-
-                SizedBox(height: 12),
-
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildStatsCard('Queries', '5', '2 pending', Icons.help_outline, Colors.orange),
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: _buildStatsCard('Complaints', '1', 'Needs attention', Icons.warning, Colors.red),
-                    ),
-                  ],
-                ),
-
-                SizedBox(height: 24),
-
-                // Services Section
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Most Ordered', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                    TextButton(onPressed: () => _showAllServices(), child: Text('View All')),
-                  ],
-                ),
-
-                SizedBox(height: 12),
-
-                ...services.take(2).map((service) => Container(
-                  margin: EdgeInsets.only(bottom: 12),
-                  padding: EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 4)],
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 50, height: 50,
-                        decoration: BoxDecoration(
-                          color: service.color.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(service.icon, color: service.color),
-                      ),
-                      SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(service.name, style: TextStyle(fontWeight: FontWeight.bold)),
-                            Text('${service.orders} orders • ${service.rating}⭐', style: TextStyle(color: Colors.grey)),
-                          ],
-                        ),
-                      ),
-                      Text('₹${service.price.toInt()}', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                )).toList(),
-
-                SizedBox(height: 20),
-
-                // Promotional Card
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(colors: [Colors.green[400]!, Colors.blue[500]!]),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Boost Your Listings', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                      Text('Get 3x more visibility', style: TextStyle(color: Colors.white70)),
-                      SizedBox(height: 12),
-                      ElevatedButton(
-                        onPressed: () {},
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.blue),
-                        child: Text('Promote Now'),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatsCard(String title, String value, String subtitle, IconData icon, Color color) {
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 4)],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: color, size: 20),
-              SizedBox(width: 8),
-              Expanded(child: Text(title, style: TextStyle(color: Colors.grey[600], fontSize: 12))),
+      appBar: AppBar(title: const Text('Story Insights')),
+      body: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Padding(
+          padding:  EdgeInsets.all(16).copyWith(left: Dim.gutter, right: Dim.gutter),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Story Content', style: textTheme.titleSmall),
+             SizedBox(height: Dim.s),
+            Text(s.content, style: textTheme.bodyMedium),
+            if (s.imageUrl != null) ...[
+               SizedBox(height: Dim.s),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(s.imageUrl!, height: 100, width: double.infinity, fit: BoxFit.cover, errorBuilder: (c, e, st) => Container(height: 100, color: Colors.grey.shade200, alignment: Alignment.center, child: Icon(Icons.broken_image_outlined, color: Colors.grey.shade400, size: 36))),
+              ),
             ],
-          ),
-          SizedBox(height: 8),
-          Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-          Text(subtitle, style: TextStyle(color: color, fontSize: 12)),
-        ],
-      ),
-    );
-  }
-
-  void _showAllServices() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => Scaffold(
-          appBar: AppBar(title: Text('All Services')),
-          body: ListView.builder(
-            padding: EdgeInsets.all(16),
-            itemCount: services.length,
-            itemBuilder: (context, index) {
-              final service = services[index];
-              return Container(
-                margin: EdgeInsets.only(bottom: 12),
-                padding: EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 4)],
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 50, height: 50,
-                      decoration: BoxDecoration(
-                        color: service.color.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(service.icon, color: service.color),
-                    ),
-                    SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(service.name, style: TextStyle(fontWeight: FontWeight.bold)),
-                          Text('${service.orders} orders this month', style: TextStyle(color: Colors.grey)),
-                          Text('${service.rating}⭐ rating', style: TextStyle(color: Colors.grey)),
-                        ],
-                      ),
-                    ),
-                    Text('₹${service.price.toInt()}', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
-                  ],
-                ),
-              );
-            },
-          ),
+             SizedBox(height: Dim.m),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(children: <Widget>[
+                ChoiceChip(label: Text('All Views ($allViewsCount)'), selected: _filter == InsightsFilter.allViews, onSelected: (_) => _setFilter(InsightsFilter.allViews), selectedColor: colorScheme.primary.withOpacity(0.1), labelStyle: _filter == InsightsFilter.allViews ? textTheme.labelMedium?.copyWith(color: colorScheme.primary) : textTheme.labelMedium, side: BorderSide(color: _filter == InsightsFilter.allViews ? colorScheme.primary : Colors.grey.shade300, width: 1)),
+                 SizedBox(width: Dim.s),
+                ChoiceChip(label: Text('Likes ($likesCount)'), selected: _filter == InsightsFilter.likes, onSelected: (_) => _setFilter(InsightsFilter.likes), selectedColor: colorScheme.primary.withOpacity(0.1), labelStyle: _filter == InsightsFilter.likes ? textTheme.labelMedium?.copyWith(color: colorScheme.primary) : textTheme.labelMedium, side: BorderSide(color: _filter == InsightsFilter.likes ? colorScheme.primary : Colors.grey.shade300, width: 1)),
+                 SizedBox(width: Dim.s),
+                ChoiceChip(label: Text('Comments ($commentsCount)'), selected: _filter == InsightsFilter.comments, onSelected: (_) => _setFilter(InsightsFilter.comments), selectedColor: colorScheme.primary.withOpacity(0.1), labelStyle: _filter == InsightsFilter.comments ? textTheme.labelMedium?.copyWith(color: colorScheme.primary) : textTheme.labelMedium, side: BorderSide(color: _filter == InsightsFilter.comments ? colorScheme.primary : Colors.grey.shade300, width: 1)),
+                 SizedBox(width: Dim.s),
+                ChoiceChip(label: Text('Clicks ($clicksCount)'), selected: _filter == InsightsFilter.clicks, onSelected: (_) => _setFilter(InsightsFilter.clicks), selectedColor: colorScheme.primary.withOpacity(0.1), labelStyle: _filter == InsightsFilter.clicks ? textTheme.labelMedium?.copyWith(color: colorScheme.primary) : textTheme.labelMedium, side: BorderSide(color: _filter == InsightsFilter.clicks ? colorScheme.primary : Colors.grey.shade300, width: 1)),
+                 SizedBox(width: Dim.s),
+                ChoiceChip(label: Text('Shares ($sharesCount)'), selected: _filter == InsightsFilter.shares, onSelected: (_) => _setFilter(InsightsFilter.shares), selectedColor: colorScheme.primary.withOpacity(0.1), labelStyle: _filter == InsightsFilter.shares ? textTheme.labelMedium?.copyWith(color: colorScheme.primary) : textTheme.labelMedium, side: BorderSide(color: _filter == InsightsFilter.shares ? colorScheme.primary : Colors.grey.shade300, width: 1)),
+              ]),
+            ),
+          ]),
         ),
-      ),
+        const Divider(height: 1),
+        Padding(padding:  EdgeInsets.fromLTRB(16, Dim.m, 16, Dim.s), child: Text('Regular Customers', style: textTheme.titleSmall)),
+        if (_topEngagers.isNotEmpty)
+          SizedBox(
+            height: 80,
+            child: ListView.separated(
+              padding:  EdgeInsets.symmetric(horizontal: Dim.gutter),
+              scrollDirection: Axis.horizontal,
+              itemBuilder: (c, i) {
+                final v = _topEngagers[i];
+                final firstName = _getFirstName(v.name);
+                return Column(children: [
+                  InkWell(onTap: () => _openUserDetails(v), borderRadius: BorderRadius.circular(28), child: CircleAvatar(radius: 28, backgroundColor: colorScheme.secondary.withOpacity(0.1), child: Text(firstName.substring(0, 1), style: textTheme.titleSmall?.copyWith(color: colorScheme.secondary)))),
+                   SizedBox(height: Dim.xs),
+                  SizedBox(width: 64, child: Text(firstName, maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center, style: textTheme.bodySmall)),
+                ]);
+              },
+              separatorBuilder: (_, __) =>  SizedBox(width: Dim.m),
+              itemCount: _topEngagers.length,
+            ),
+          )
+        else
+          Padding(padding:  EdgeInsets.symmetric(horizontal: Dim.gutter, vertical: Dim.s), child: Text('No top engagers yet.', style: textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic))),
+         SizedBox(height: Dim.s),
+        const Divider(height: 1),
+        Expanded(
+          child: _filtered.isEmpty
+              ? Center(
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(Icons.sentiment_dissatisfied_outlined, size: 64, color: Colors.grey.shade300),
+                     SizedBox(height: Dim.m),
+                    Text('No interactions found for this filter.', style: textTheme.bodyMedium?.copyWith(color: Colors.grey.shade600)),
+                     SizedBox(height: Dim.xs),
+                    Text('Try a different filter or check back later.', style: textTheme.bodySmall?.copyWith(color: Colors.grey.shade500)),
+                  ]),
+                )
+              : ListView.separated(
+                  padding:  EdgeInsets.all(16).copyWith(left: Dim.gutter, right: Dim.gutter),
+                  itemBuilder: (c, index) {
+                    final v = _filtered[index];
+                    final firstName = _getFirstName(v.name);
+                    return Card(
+                      elevation: 1,
+                      margin: EdgeInsets.zero,
+                      child: InkWell(
+                        onTap: () => _openUserDetails(v),
+                        borderRadius: BorderRadius.circular(14),
+                        child: Padding(
+                          padding:  EdgeInsets.symmetric(vertical: Dim.s),
+                          child: ListTile(
+                            leading: CircleAvatar(backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1), child: Text(firstName.substring(0, 1), style: textTheme.titleSmall?.copyWith(color: Theme.of(context).colorScheme.primary))),
+                            title: Text(firstName, style: textTheme.titleSmall),
+                            subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Text('Viewed ${_timeAgo(v.viewedAt)}', style: textTheme.bodySmall),
+                              if (v.comment != null) Padding(padding:  EdgeInsets.only(top: Dim.s), child: Text('\"${v.comment!.content}\"', maxLines: 1, overflow: TextOverflow.ellipsis, style: textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic))),
+                            ]),
+                            trailing: Wrap(spacing: Dim.s, children: <Widget>[
+                              if (v.likedAt != null) Icon(Icons.favorite, color: Colors.red.shade400, size: 18),
+                              if (v.comment != null) Icon(Icons.comment, color: Colors.orange.shade400, size: 18),
+                              if (v.clickedAt != null) Icon(Icons.touch_app, color: Colors.green.shade400, size: 18),
+                              if (v.sharedAt != null) Icon(Icons.share, color: Colors.blueGrey.shade400, size: 18),
+                            ]),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                  separatorBuilder: (_, __) =>  SizedBox(height: Dim.s),
+                  itemCount: _filtered.length,
+                ),
+        ),
+      ]),
     );
   }
 }
 
-// Simplified Camera Page
-class CameraPage extends StatefulWidget {
-  final Function(Story) onStoryCreated;
-
-  CameraPage({required this.onStoryCreated});
-
+/* ---------------- Stats & Small Widgets ---------------- */
+class StatsCardsWidget extends StatelessWidget {
+  const StatsCardsWidget({super.key});
   @override
-  State<CameraPage> createState() => _CameraPageState();
+  Widget build(BuildContext context) {
+    return Column(children: [
+      Row(children: <Widget>[
+        Expanded(child: SimpleStatCard(icon: Icons.shopping_bag_outlined, title: 'Orders Today', value: '12', subtitle: '+3 from yesterday', color: Colors.green)),
+         SizedBox(width: Dim.s),
+        Expanded(child: SimpleStatCard(icon: Icons.currency_rupee, title: 'Earnings Today', value: '₹4850', subtitle: '+₹1200 from yesterday', color: Colors.blue)),
+      ]),
+       SizedBox(height: Dim.s),
+      Row(children: <Widget>[
+        Expanded(child: SimpleStatCard(icon: Icons.help_outline, title: 'Queries', value: '5', subtitle: '2 pending', color: Colors.orange)),
+         SizedBox(width: Dim.s),
+        Expanded(child: SimpleStatCard(icon: Icons.warning_amber_outlined, title: 'Complaints', value: '1', subtitle: 'Needs attention', color: Colors.red)),
+      ]),
+    ]);
+  }
 }
 
-class _CameraPageState extends State<CameraPage> {
-  CameraController? controller;
-  List<CameraDescription>? cameras;
-  bool isRecording = false;
-  int recordingSeconds = 0;
-  Timer? timer;
-
+class SimpleStatCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String value;
+  final String subtitle;
+  final Color color;
+  const SimpleStatCard({super.key, required this.icon, required this.title, required this.value, required this.subtitle, required this.color});
   @override
-  void initState() {
-    super.initState();
-    initCamera();
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      padding:  EdgeInsets.all(Dim.cardPadding),
+      decoration: BoxDecoration(color: colorScheme.surface, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 4))]),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(10)), child: Icon(icon, color: color, size: 20)),
+          const SizedBox(width: 10),
+          Text(title, style: textTheme.bodySmall?.copyWith(color: Colors.black54)),
+        ]),
+         SizedBox(height: Dim.s),
+        Text(value, style: textTheme.titleMedium),
+         SizedBox(height: Dim.xs),
+        Text(subtitle, style: textTheme.bodySmall?.copyWith(color: color)),
+      ]),
+    );
   }
+}
 
-  void initCamera() async {
-    final cameraPermission = await Permission.camera.request();
-    final micPermission = await Permission.microphone.request();
-
-    if (cameraPermission.isGranted && micPermission.isGranted) {
-      cameras = await availableCameras();
-      if (cameras!.isNotEmpty) {
-        controller = CameraController(cameras![0], ResolutionPreset.high);
-        await controller!.initialize();
-        setState(() {});
-      }
-    } else {
-      Navigator.pop(context);
-    }
+class OrderedItemPreview extends StatelessWidget {
+  final String name;
+  final String ordersText;
+  final String priceText;
+  final IconData icon;
+  final Color color;
+  const OrderedItemPreview({super.key, required this.name, required this.ordersText, required this.priceText, required this.icon, required this.color});
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      margin:  EdgeInsets.only(bottom: Dim.m),
+      padding:  EdgeInsets.all(Dim.cardPadding),
+      decoration: BoxDecoration(color: colorScheme.surface, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 4))]),
+      child: Row(children: [
+        Container(width: 56, height: 56, decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(12)), child: Icon(icon, color: color, size: 28)),
+         SizedBox(width: Dim.m),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(name, style: textTheme.titleSmall),  SizedBox(height: Dim.xs), Text(ordersText, style: textTheme.bodySmall?.copyWith(color: Colors.black54))])),
+        Text(priceText, style: textTheme.titleSmall?.copyWith(color: Colors.green)),
+      ]),
+    );
   }
+}
 
-  void startRecording() async {
-    if (controller != null && !isRecording) {
-      await controller!.startVideoRecording();
-      setState(() {
-        isRecording = true;
-        recordingSeconds = 0;
-      });
-
-      timer = Timer.periodic(Duration(seconds: 1), (t) {
-        setState(() {
-          recordingSeconds++;
-        });
-        if (recordingSeconds >= 30) {
-          stopRecording();
-        }
-      });
-    }
+class PromotionalCardsWidget extends StatelessWidget {
+  const PromotionalCardsWidget({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin:  EdgeInsets.only(top: Dim.s),
+      padding: const EdgeInsets.all(18), // kept 18 for gradient card density, change to Dim.m if preferred
+      decoration: BoxDecoration(
+        gradient: LinearGradient(colors: [Colors.teal.shade400, Colors.blue.shade600], begin: Alignment.topLeft, end: Alignment.bottomRight),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 12, offset: const Offset(0, 8))],
+      ),
+      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Boost Your Listings', style: Theme.of(context).textTheme.titleSmall?.copyWith(color: Colors.white)),  SizedBox(height: Dim.xs), Text('Get 3x more visibility', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.white70))])),
+        IconButton(onPressed: () {}, icon: const Icon(Icons.rocket_launch_outlined, color: Colors.white, size: 30)),
+      ]),
+    );
   }
+}
 
-  void stopRecording() async {
-    if (controller != null && isRecording) {
-      timer?.cancel();
-      XFile video = await controller!.stopVideoRecording();
-      setState(() {
-        isRecording = false;
-      });
+/* ---------------- Create Post Modal ---------------- */
+class CreatePostModal extends StatefulWidget {
+  final Function(Story) onStoryCreated;
+  final VoidCallback onRequestCamera;
+  const CreatePostModal({super.key, required this.onStoryCreated, required this.onRequestCamera});
+  @override
+  State<CreatePostModal> createState() => _CreatePostModalState();
+}
 
-      // Create story
-      final story = Story(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        content: 'Shared a video story',
-        postedAt: DateTime.now(),
-        views: 0,
-        clicks: 0,
-        likes: 0,
-        comments: [],
-        videoPath: video.path,
-      );
+class _CreatePostModalState extends State<CreatePostModal> {
+  final TextEditingController _ctrl = TextEditingController();
+  bool _loading = false;
 
-      widget.onStoryCreated(story);
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Video story created!')),
-      );
-    }
-  }
-
-  void takePicture() async {
-    if (controller != null) {
-      XFile image = await controller!.takePicture();
-
-      final story = Story(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        content: 'Shared a photo story',
-        postedAt: DateTime.now(),
-        views: 0,
-        clicks: 0,
-        likes: 0,
-        comments: [],
-        imagePath: image.path,
-      );
-
-      widget.onStoryCreated(story);
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Photo story created!')),
-      );
-    }
+  void _create() async {
+    if (_ctrl.text.trim().isEmpty) return;
+    setState(() => _loading = true);
+    await Future<void>.delayed(const Duration(milliseconds: 700));
+    final s = Story(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      content: _ctrl.text.trim(),
+      postedAt: DateTime.now(),
+      views: 0,
+      clicks: 0,
+      likes: 0,
+      shares: 0,
+      comments: <Comment>[],
+      expiresAt: DateTime.now().add(const Duration(hours: 24)),
+      imageUrl: null,
+    );
+    widget.onStoryCreated(s);
+    if (mounted) Navigator.pop(context);
   }
 
   @override
   void dispose() {
-    controller?.dispose();
-    timer?.cancel();
+    _ctrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (controller == null || !controller!.value.isInitialized) {
-      return Scaffold(
-        backgroundColor: Colors.black,
-        body: Center(child: CircularProgressIndicator(color: Colors.white)),
-      );
-    }
-
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        children: [
-          Positioned.fill(child: CameraPreview(controller!)),
-
-          // Top controls
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 10,
-            left: 20,
-            right: 20,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: Icon(Icons.close, color: Colors.white),
-                ),
-                if (isRecording)
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(15)),
-                    child: Text('${recordingSeconds}s', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  ),
-              ],
-            ),
-          ),
-
-          // Bottom controls
-          Positioned(
-            bottom: 50,
-            left: 0,
-            right: 0,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                // Gallery placeholder
-                Container(
-                  width: 50, height: 50,
-                  decoration: BoxDecoration(color: Colors.white30, borderRadius: BorderRadius.circular(10)),
-                  child: Icon(Icons.photo_library, color: Colors.white),
-                ),
-
-                // Record button
-                GestureDetector(
-                  onTap: isRecording ? stopRecording : null,
-                  onLongPress: startRecording,
-                  onLongPressEnd: (_) => stopRecording(),
-                  child: Container(
-                    width: 80, height: 80,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 4),
-                    ),
-                    child: Center(
-                      child: Container(
-                        width: isRecording ? 30 : 60,
-                        height: isRecording ? 30 : 60,
-                        decoration: BoxDecoration(
-                          color: isRecording ? Colors.red : Colors.white,
-                          shape: isRecording ? BoxShape.rectangle : BoxShape.circle,
-                          borderRadius: isRecording ? BorderRadius.circular(6) : null,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                // Photo button
-                GestureDetector(
-                  onTap: takePicture,
-                  child: Container(
-                    width: 50, height: 50,
-                    decoration: BoxDecoration(color: Colors.white30, borderRadius: BorderRadius.circular(10)),
-                    child: Icon(Icons.camera_alt, color: Colors.white),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Instructions
-          if (!isRecording)
-            Positioned(
-              bottom: 150,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(20)),
-                  child: Text('Hold for video, tap photo button for image',
-                      style: TextStyle(color: Colors.white)),
-                ),
+    final textTheme = Theme.of(context).textTheme;
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+        padding:  EdgeInsets.all(20).copyWith(left: Dim.gutter, right: Dim.gutter),
+        decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: const BorderRadius.vertical(top: Radius.circular(24))),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Center(child: Container(width: 60, height: 5, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2.5)))),
+           SizedBox(height: Dim.m),
+          Text('Create New Story', style: textTheme.titleMedium),
+           SizedBox(height: Dim.m),
+          TextField(controller: _ctrl, maxLines: 4, decoration: const InputDecoration(hintText: 'Share something...')),
+           SizedBox(height: Dim.m),
+          Row(children: [
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  widget.onRequestCamera();
+                },
+                icon: const Icon(Icons.camera_alt),
+                label: const Text('Camera'),
               ),
             ),
-        ],
+             SizedBox(width: Dim.s),
+            Expanded(
+              child: ElevatedButton(
+                onPressed: _loading ? null : _create,
+                child: _loading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Share Story'),
+              ),
+            ),
+          ]),
+           SizedBox(height: Dim.s),
+        ]),
       ),
     );
   }
