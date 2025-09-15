@@ -55,12 +55,12 @@ class AppColors {
   static const Color background = Color(0xFFF7F9FC); // app background
   static const Color surface = Color(0xFFFFFFFF); // cards, sheets, panels
   static const Color surfaceLight = Color(0xFFFAFAFA); // neutral50 alias
-  static const Color surfaceDark = Color(0xFF1E1E1E);
+  static const Color surfaceDark = Color(0xFF1A1A1A);
   static const Color darkBackground = Color(0xFF0B1220);
   static const Color darkSurface = Color(0xFF0F172A);
 
   // Additional background variants
-  static const Color backgroundDark = Color(0xFF111111); // from darkColorScheme surface
+  static const Color backgroundDark = Color(0xFF000000); // pure black background
   static const Color dimBackground = Color(0xFF111111); // dim background variant
 
   // ===== TEXT COLORS =====
@@ -170,8 +170,8 @@ class AppColors {
     onErrorContainer: Color(0xFFFFDAD6),
     outline: neutral500,
     outlineVariant: neutral600,
-    surface: Color(0xFF111111),
-    onSurface: neutral100,
+    surface: surfaceDark,
+    onSurface: Colors.white,
     surfaceVariant: neutral800,
     onSurfaceVariant: neutral300,
     inverseSurface: neutral100,

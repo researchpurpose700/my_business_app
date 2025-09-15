@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import '/core/theme/dim.dart';
-import '/core/theme/icons.dart';
-import '/utils/accessibility.dart';
+// Removed unused imports to keep the scaffold lean and themed via AppTheme
 
 class AppScaffold extends StatelessWidget {
   final PreferredSizeWidget? appBar;
@@ -14,6 +12,10 @@ class AppScaffold extends StatelessWidget {
   final Color? backgroundColor;
   final bool extendBody;
   final bool extendBodyBehindAppBar;
+  final bool useSafeArea;
+  final bool scrollBody;
+  final EdgeInsetsGeometry? padding;
+  final bool resizeToAvoidBottomInset;
 
   const AppScaffold({
     super.key,
@@ -27,22 +29,46 @@ class AppScaffold extends StatelessWidget {
     this.backgroundColor,
     this.extendBody = false,
     this.extendBodyBehindAppBar = false,
+    this.useSafeArea = true,
+    this.scrollBody = false,
+    this.padding,
+    this.resizeToAvoidBottomInset = true,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
+      resizeToAvoidBottomInset: resizeToAvoidBottomInset,
       appBar: appBar,
-      body: body,
+      body: _buildBody(theme),
       drawer: drawer,
       endDrawer: endDrawer,
       bottomNavigationBar: bottomNavigationBar,
       floatingActionButton: floatingActionButton,
       floatingActionButtonLocation: floatingActionButtonLocation,
-      backgroundColor: backgroundColor,
+      // Default to themed surface color if not provided
+      backgroundColor: backgroundColor ?? theme.colorScheme.surface,
       extendBody: extendBody,
       extendBodyBehindAppBar: extendBodyBehindAppBar,
     );
+  }
+
+  Widget _buildBody(ThemeData theme) {
+    Widget content = body;
+    if (padding != null) {
+      content = Padding(padding: padding!, child: content);
+    }
+    if (scrollBody) {
+      content = SingleChildScrollView(
+        padding: padding == null ? EdgeInsets.zero : EdgeInsets.zero,
+        child: content,
+      );
+    }
+    if (useSafeArea) {
+      content = SafeArea(child: content);
+    }
+    return content;
   }
 }
 

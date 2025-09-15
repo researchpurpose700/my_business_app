@@ -137,7 +137,7 @@ class _BusinessLoginPageState extends State<BusinessLoginPage> {
                 child: Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.95),
+                    color: Theme.of(context).colorScheme.surface.withOpacity(0.98),
                     borderRadius: BorderRadius.circular(30),
                     boxShadow: const [
                       BoxShadow(
@@ -154,26 +154,16 @@ class _BusinessLoginPageState extends State<BusinessLoginPage> {
                       children: [
                         _logoBox(),
                         const SizedBox(height: 16),
-                        Text(
-                          "Welcome Back",
-                          style: TextStyle(
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey[800],
-                          ),
-                        ),
+                        Text("Welcome Back", style: Theme.of(context).textTheme.titleLarge),
                         const SizedBox(height: 6),
-                        Text(
-                          "Sign in to your account",
-                          style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                        ),
+                        Text("Sign in to your account", style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.75))),
                         const SizedBox(height: 24),
 
                         // Mobile Number Section
                         Row(
                           children: [
-                            SizedBox(
-                              width: 80,
+                            ConstrainedBox(
+                              constraints: BoxConstraints(minWidth: 72, maxWidth: 100),
                               child: DropdownButtonFormField<String>(
                                 value: _countryCode, // Fixed: changed from 'initialValue' to 'value'
                                 items: ['+91', '+1', '+44']
@@ -211,11 +201,6 @@ class _BusinessLoginPageState extends State<BusinessLoginPage> {
                                 },
                                 decoration: InputDecoration(
                                   labelText: AppLocalizations.of(context)!.mobileNumber,
-                                  filled: true,
-                                  fillColor: Colors.grey[100],
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
                                   counterText: '',
                                 ),
                               ),
@@ -232,20 +217,10 @@ class _BusinessLoginPageState extends State<BusinessLoginPage> {
                           width: double.infinity,
                           child: ElevatedButton(
                             onPressed: _isLoading ? null : _loginWithOtp,
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              backgroundColor: Colors.deepPurple,
-                            ),
+                            style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
                             child: _isLoading
-                                ? const CircularProgressIndicator(color: Colors.white)
-                                : const Text(
-                              "SIGN IN",
-                              style: TextStyle(
-                                  fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
-                            ),
+                                ? CircularProgressIndicator(color: Theme.of(context).colorScheme.onPrimary)
+                                : Text("SIGN IN", style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Theme.of(context).colorScheme.onPrimary)),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -260,16 +235,9 @@ class _BusinessLoginPageState extends State<BusinessLoginPage> {
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
                               ),
-                              side: const BorderSide(color: Colors.deepPurple, width: 2),
+                              side: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
                             ),
-                            child: const Text(
-                              "CREATE NEW ACCOUNT",
-                              style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.deepPurple
-                              ),
-                            ),
+                            child: Text("CREATE NEW ACCOUNT", style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Theme.of(context).colorScheme.primary)),
                           ),
                         ),
                         const SizedBox(height: 12),

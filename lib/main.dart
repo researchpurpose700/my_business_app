@@ -37,7 +37,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   Locale? _locale;
   AppFlowState? _flowState; // null = still loading persisted state
-  ThemeMode _themeMode = ThemeMode.system;
+  ThemeMode _themeMode = ThemeMode.dark;
 
   @override
   void initState() {
@@ -160,6 +160,14 @@ class _MyAppState extends State<MyApp> {
         '/settings': (context) => SettingsPage(
           currentThemeMode: _themeMode,
           onThemeChanged: toggleTheme,
+        ),
+        '/language': (context) => LanguageSelectionPage(
+          onLanguageSelected: (code) async {
+            await setLocale(Locale(code));
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            }
+          },
         ),
       },
 

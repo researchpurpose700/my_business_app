@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:my_business_app/core/theme/dim.dart';
+import 'package:my_business_app/core/components/navigation/app_scaffold.dart';
 
 class LanguageSelectionPage extends StatelessWidget {
   final Function(String) onLanguageSelected;
@@ -18,12 +19,12 @@ class LanguageSelectionPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AppScaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          child: Column(
+      scrollBody: true,
+      useSafeArea: true,
+      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      body: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               SizedBox(height: 60),
@@ -58,8 +59,9 @@ class LanguageSelectionPage extends StatelessWidget {
               SizedBox(height: 40),
 
               // Language list
-              Expanded(
-                child: ListView.separated(
+              ListView.separated(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
                   itemCount: languages.length,
                   separatorBuilder: (_, __) => SizedBox(height: Dim.m),
                   itemBuilder: (context, index) {
@@ -104,11 +106,8 @@ class LanguageSelectionPage extends StatelessWidget {
                     );
                   },
                 ),
-              ),
             ],
           ),
-        ),
-      ),
     );
   }
 }

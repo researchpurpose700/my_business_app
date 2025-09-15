@@ -12,6 +12,9 @@ class AppIconButton extends StatelessWidget {
   final AppIconButtonSize size;
   final String? tooltip;
   final bool isLoading;
+  // Optional explicit size overrides for fine-grained control
+  final double? iconSizeOverride;
+  final double? buttonSizeOverride;
 
   const AppIconButton({
     super.key,
@@ -21,6 +24,8 @@ class AppIconButton extends StatelessWidget {
     this.size = AppIconButtonSize.medium,
     this.tooltip,
     this.isLoading = false,
+    this.iconSizeOverride,
+    this.buttonSizeOverride,
   });
 
   @override
@@ -38,8 +43,8 @@ class AppIconButton extends StatelessWidget {
   }
 
   Widget _buildButton(BuildContext context) {
-    final iconSize = _getIconSize();
-    final buttonSize = _getButtonSize();
+    final iconSize = iconSizeOverride ?? _getIconSize();
+    final buttonSize = buttonSizeOverride ?? _getButtonSize();
 
     Widget child = isLoading
         ? SizedBox(
@@ -107,11 +112,11 @@ class AppIconButton extends StatelessWidget {
   double _getButtonSize() {
     switch (size) {
       case AppIconButtonSize.small:
-        return 18.0;
+        return AppIcons.iconButtonSizeSmall;
       case AppIconButtonSize.medium:
-        return 26.0;
+        return AppIcons.iconButtonSizeMedium;
       case AppIconButtonSize.large:
-        return 35.0;
+        return AppIcons.iconButtonSizeLarge;
     }
   }
 }

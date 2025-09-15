@@ -54,26 +54,27 @@ class AppCard extends StatelessWidget {
   }
 
   Widget _buildCard(BuildContext context, ThemeData theme) {
+    final cardTheme = CardTheme.of(context);
     switch (variant) {
       case AppCardVariant.filled:
         return Card(
-          elevation: elevation ?? 0,
-          color: color ?? theme.colorScheme.surfaceVariant,
+          elevation: elevation ?? cardTheme.elevation,
+          color: color ?? cardTheme.color ?? theme.colorScheme.surface,
+          margin: margin ?? cardTheme.margin,
+          shape: cardTheme.shape,
           child: Padding(
-            padding: padding ?? EdgeInsets.all(Dim.m),
+            padding: padding ?? (cardTheme.margin != null ? EdgeInsets.zero : EdgeInsets.all(Dim.m)),
             child: child,
           ),
         );
       case AppCardVariant.outlined:
         return Card(
-          elevation: 0,
-          color: color ?? theme.colorScheme.surface,
+          elevation: elevation ?? 0,
+          color: color ?? cardTheme.color ?? theme.colorScheme.surface,
+          margin: margin ?? cardTheme.margin,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(Dim.radiusM),
-            side: BorderSide(
-              color: theme.colorScheme.outline,
-              width: 1,
-            ),
+            side: BorderSide(color: theme.colorScheme.outline, width: 1),
           ),
           child: Padding(
             padding: padding ?? EdgeInsets.all(Dim.m),
@@ -82,8 +83,10 @@ class AppCard extends StatelessWidget {
         );
       case AppCardVariant.elevated:
         return Card(
-          elevation: elevation ?? Dim.elevation4,
-          color: color ?? theme.colorScheme.surface,
+          elevation: elevation ?? cardTheme.elevation ?? Dim.elevation4,
+          color: color ?? cardTheme.color ?? theme.colorScheme.surface,
+          margin: margin ?? cardTheme.margin,
+          shape: cardTheme.shape,
           child: onTap != null
               ? InkWell(
             onTap: onTap,

@@ -123,12 +123,8 @@ class AppButton extends StatelessWidget {
       children.add(SizedBox(width: Dim.s));
     }
 
-    children.add(
-      Text(
-        text,
-        style: TextStyle(fontSize: _getFontSize()),
-      ),
-    );
+    final TextStyle? baseLabelStyle = _getLabelTextStyle(theme);
+    children.add(Text(text, style: baseLabelStyle));
 
     if (trailingIcon != null) {
       children.add(SizedBox(width: Dim.s));
@@ -175,14 +171,16 @@ class AppButton extends StatelessWidget {
     }
   }
 
-  double _getFontSize() {
+  TextStyle? _getLabelTextStyle(ThemeData theme) {
+    // Use theme-provided button label styles and only adjust size via scaled variants
+    final TextStyle? labelLarge = theme.textTheme.labelLarge;
     switch (size) {
       case AppButtonSize.small:
-        return 4;
+        return labelLarge?.copyWith(fontSize: (labelLarge?.fontSize ?? 14) - 2);
       case AppButtonSize.medium:
-        return 14;
+        return labelLarge;
       case AppButtonSize.large:
-        return 16;
+        return labelLarge?.copyWith(fontSize: (labelLarge?.fontSize ?? 14) + 2);
     }
   }
 }

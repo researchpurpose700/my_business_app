@@ -154,7 +154,7 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
                 child: Container(
                   padding: EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.95),
+                    color: Theme.of(context).colorScheme.surface.withOpacity(0.98),
                     borderRadius: BorderRadius.circular(30),
                     boxShadow: const [
                       BoxShadow(
@@ -171,19 +171,9 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
                       children: [
                         _logoBox(),
                         SizedBox(height: Dim.m),
-                        Text(
-                          AppLocalizations.of(context)!.joinOurNetwork,
-                          style: TextStyle(
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey[800],
-                          ),
-                        ),
+                        Text(AppLocalizations.of(context)!.joinOurNetwork, style: Theme.of(context).textTheme.titleLarge),
                         SizedBox(height: 6),
-                        Text(
-                          AppLocalizations.of(context)!.registerYourBusinessInMinutes,
-                          style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                        ),
+                        Text(AppLocalizations.of(context)!.registerYourBusinessInMinutes, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.75))),
                         SizedBox(height: Dim.l),
 
                         _buildTextField(
@@ -220,8 +210,8 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
 
                         Row(
                           children: [
-                            SizedBox(
-                              width: 80,
+                            ConstrainedBox(
+                              constraints: BoxConstraints(minWidth: 72, maxWidth: 100),
                               child: DropdownButtonFormField<String>(
                                 value: _countryCode,
                                 items: ['+91', '+1', '+44']
@@ -259,11 +249,6 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
                                 },
                                 decoration: InputDecoration(
                                   labelText: AppLocalizations.of(context)!.mobileNumber,
-                                  filled: true,
-                                  fillColor: Colors.grey[100],
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
                                   counterText: '',
                                 ),
                               ),
@@ -280,20 +265,10 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
                           width: double.infinity,
                           child: ElevatedButton(
                             onPressed: _isLoading ? null : _submit,
-                            style: ElevatedButton.styleFrom(
-                              padding: EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              backgroundColor: Colors.deepPurple,
-                            ),
+                            style: ElevatedButton.styleFrom(padding: EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
                             child: _isLoading
-                                ? const CircularProgressIndicator(color: Colors.white)
-                                : Text(
-                              AppLocalizations.of(context)!.createAccount.toUpperCase(),
-                              style: const TextStyle(
-                                  fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
-                            ),
+                                ? CircularProgressIndicator(color: Theme.of(context).colorScheme.onPrimary)
+                                : Text(AppLocalizations.of(context)!.createAccount.toUpperCase(), style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Theme.of(context).colorScheme.onPrimary)),
                           ),
                         ),
                         SizedBox(height: Dim.m),
@@ -311,14 +286,7 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
                                 ),
                                 side: const BorderSide(color: Colors.deepPurple, width: 2),
                               ),
-                              child: const Text(
-                                "ALREADY HAVE ACCOUNT? SIGN IN",
-                                style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.deepPurple
-                                ),
-                              ),
+                              child: Text("ALREADY HAVE ACCOUNT? SIGN IN", style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Theme.of(context).colorScheme.primary)),
                             ),
                           ),
                         SizedBox(height: Dim.s),

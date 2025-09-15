@@ -16,7 +16,10 @@ class AppIcons {
   );
 
   // Icon button configurations
-  static const double iconButtonSize = 40.0;
+  static const double iconButtonSize = 40.0; // legacy default
+  static const double iconButtonSizeSmall = 32.0;
+  static const double iconButtonSizeMedium = 40.0;
+  static const double iconButtonSizeLarge = 48.0;
   static const double iconButtonPadding = Dim.s;
 
   // Common icons (Material Icons)

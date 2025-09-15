@@ -4,6 +4,7 @@ import 'package:image_cropper/image_cropper.dart';
 import 'dart:io';
 import 'package:my_business_app/config/save_data.dart';
 import 'package:my_business_app/core/theme/dim.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -473,7 +474,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   bottom: 60,
                   child: Center(
                     child: Material(
-                      color: Colors.white.withOpacity(0.92),
+                      color: Theme.of(context).colorScheme.surface.withOpacity(0.92),
                       shape: const StadiumBorder(),
                       elevation: 2,
                       child: InkWell(
@@ -485,8 +486,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.photo_camera_rounded,
-                                  size: 18, color: Colors.black87),
+                              Icon(Icons.photo_camera_rounded,
+                                  size: 18, color: Theme.of(context).colorScheme.onSurface),
                               SizedBox(width: Dim.s),
                               Text(
                                 _coverImage == null
@@ -529,10 +530,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ? FileImage(_profileImage!)
                               : null,
                           child: _profileImage == null
-                              ? const Icon(
+                              ? Icon(
                             Icons.person_rounded,
                             size: 40,
-                            color: Colors.black38,
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
                           )
                               : null,
                         ),
@@ -547,7 +548,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 color: cs.primary,
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: Colors.white,
+                                  color: Theme.of(context).colorScheme.surface,
                                   width: 2,
                                 ),
                               ),
@@ -556,7 +557,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     ? Icons.add_rounded
                                     : Icons.edit_rounded,
                                 size: 18,
-                                color: Colors.white,
+                                color: Theme.of(context).colorScheme.onPrimary,
                               ),
                             ),
                           ),
@@ -665,6 +666,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 color: Colors.black54,
                               ),
                             ),
+                          ],
+                        ),
+                        SizedBox(height: Dim.s),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            FilledButton.icon(
+                              onPressed: () {
+                                Navigator.of(context).pushNamed('/settings');
+                              },
+                              icon: const Icon(Icons.brightness_6_rounded, size: 16),
+                              label: const Text('Theme'),
+                            ),
+                            SizedBox(width: Dim.s),
                           ],
                         ),
                         Align(
@@ -837,7 +852,7 @@ class AppCard extends StatelessWidget {
       padding:
       padding ?? EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(radius),
         border: Border.all(color: const Color(0xFFE8EAF0)),
         boxShadow: [
@@ -878,7 +893,7 @@ class FeatureBox extends StatelessWidget {
           children: [
             Icon(icon, size: 28, color: cs.primary),
             SizedBox(height: Dim.s),
-            Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+            Text(title, style: TextStyle(fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface)),
           ],
         ),
       ),
@@ -895,12 +910,12 @@ class _IconLine extends StatelessWidget {
   Widget build(BuildContext context) {
     final row = Row(
       children: [
-        Icon(icon, size: 16, color: Colors.black45),
+        Icon(icon, size: 16, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.45)),
         SizedBox(width: Dim.s),
         Expanded(
           child: Text(
             text,
-            style: const TextStyle(fontSize: 13, color: Colors.black87),
+            style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
@@ -931,12 +946,12 @@ class BaseSlidePage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(title),
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        surfaceTintColor: Theme.of(context).colorScheme.surface,
         elevation: 0.5,
-        foregroundColor: Colors.black87,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
       ),
-      body: Container(color: const Color(0xFFF6F7FB), child: child),
+      body: Container(color: Theme.of(context).scaffoldBackgroundColor, child: child),
       floatingActionButton: showCreateButton
           ? FloatingActionButton.extended(
         onPressed: () => ScaffoldMessenger.of(
@@ -945,7 +960,7 @@ class BaseSlidePage extends StatelessWidget {
         icon: const Icon(Icons.add_rounded),
         label: Text('New $title'),
         backgroundColor: cs.primary,
-        foregroundColor: Colors.white,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
       )
           : null,
     );
@@ -971,7 +986,8 @@ class PostsPage extends StatelessWidget {
             color: const Color(0xFFECEFF5),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: const Icon(Icons.image_rounded, color: Colors.black38),
+          child: Icon(Icons.image_rounded, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4)),
+          // Themed icon color will be applied in dark mode elsewhere if needed
         ),
       ),
     );
@@ -1141,7 +1157,7 @@ class _InsightLine extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Text(label, style: const TextStyle(color: Colors.black54)),
+        Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.65))),
         const Spacer(),
         Text(value, style: const TextStyle(fontWeight: FontWeight.w800)),
       ],
