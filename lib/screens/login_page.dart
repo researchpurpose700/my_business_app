@@ -175,7 +175,7 @@ class _BusinessLoginPageState extends State<BusinessLoginPage> {
                             SizedBox(
                               width: 80,
                               child: DropdownButtonFormField<String>(
-                                initialValue: _countryCode,
+                                value: _countryCode, // Fixed: changed from 'initialValue' to 'value'
                                 items: ['+91', '+1', '+44']
                                     .map((c) => DropdownMenuItem(value: c, child: Text(c)))
                                     .toList(),

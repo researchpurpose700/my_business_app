@@ -1,0 +1,117 @@
+{
+  "color": {
+    "primary": {
+      "50": "#E3F2FD",
+      "100": "#BBDEFB",
+      "200": "#90CAF9",
+      "300": "#64B5F6",
+      "400": "#42A5F5",
+      "500": "#2196F3",
+      "600": "#1E88E5",
+      "700": "#1976D2",
+      "800": "#1565C0",
+      "900": "#0D47A1"
+    },
+    "secondary": {
+      "50": "#F3E5F5",
+      "100": "#E1BEE7",
+      "200": "#CE93D8",
+      "300": "#BA68C8",
+      "400": "#AB47BC",
+      "500": "#9C27B0",
+      "600": "#8E24AA",
+      "700": "#7B1FA2",
+      "800": "#6A1B9A",
+      "900": "#4A148C"
+    },
+    "neutral": {
+      "50": "#FAFAFA",
+      "100": "#F5F5F5",
+      "200": "#EEEEEE",
+      "300": "#E0E0E0",
+      "400": "#BDBDBD",
+      "500": "#9E9E9E",
+      "600": "#757575",
+      "700": "#616161",
+      "800": "#424242",
+      "900": "#212121"
+    },
+    "semantic": {
+      "success": "#4CAF50",
+      "warning": "#FF9800",
+      "error": "#F44336",
+      "info": "#2196F3"
+    }
+  },
+  "spacing": {
+    "xs": 4,
+    "s": 8,
+    "m": 16,
+    "l": 24,
+    "xl": 32,
+    "xxl": 48,
+    "xxxl": 64
+  },
+  "borderRadius": {
+    "xs": 4,
+    "s": 8,
+    "m": 12,
+    "l": 16,
+    "xl": 24,
+    "full": 9999
+  },
+  "elevation": {
+    "0": 0,
+    "1": 1,
+    "2": 2,
+    "4": 4,
+    "6": 6,
+    "8": 8,
+    "12": 12,
+    "16": 16,
+    "24": 24
+  },
+  "typography": {
+    "fontFamily": {
+      "primary": "Inter"
+    },
+    "fontSize": {
+      "xs": 11,
+      "s": 12,
+      "m": 14,
+      "l": 16,
+      "xl": 18,
+      "xxl": 22,
+      "xxxl": 28
+    },
+    "fontWeight": {
+      "regular": 400,
+      "medium": 500,
+      "semibold": 600,
+      "bold": 700
+    },
+    "lineHeight": {
+      "tight": 1.2,
+      "normal": 1.4,
+      "relaxed": 1.6
+    }
+  },
+  "animation": {
+    "duration": {
+      "fast": 150,
+      "medium": 300,
+      "slow": 500
+    },
+    "easing": {
+      "easeIn": "cubic-bezier(0.4, 0, 1, 1)",
+      "easeOut": "cubic-bezier(0, 0, 0.2, 1)",
+      "easeInOut": "cubic-bezier(0.4, 0, 0.2, 1)"
+    }
+  },
+  "breakpoints": {
+    "mobile": 480,
+    "tablet": 768,
+    "desktop": 1024,
+    "largeDesktop": 1440
+  }
+}
