@@ -1,91 +1,209 @@
-// lib/core/theme/typography.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+/// Typography system for consistent text styling throughout the app
 class AppTypography {
-  // Base sizes tuned for older users (40-60). Adjust if needed.
-  static const double _base = 16; // bodyLarge base
-  static const double _scaleHeadline = 1.8;
-  static const double _scaleTitle = 1.25;
-  static const double _scaleSmall = 0.875;
+  // Font family
+  static const String _fontFamily = 'Inter';
 
-  // Recommended line heights (multiples of fontSize)
-  static const double _lineHeightTight = 1.1;
-  static const double _lineHeightNormal = 1.4;
-  static const double _lineHeightLoose = 1.6;
-
-  // Call this from app_theme.dart
-  static TextTheme get textTheme {
-    final base = GoogleFonts.montserratTextTheme();
-
-    return base.copyWith(
-      // Headlines / page titles
-      headlineLarge: GoogleFonts.montserrat(
-        fontSize: _base * _scaleHeadline, // ~28.8
-        fontWeight: FontWeight.w700,
-        height: _lineHeightNormal,
+  // Text theme
+  static TextTheme get textTheme => GoogleFonts.interTextTheme(
+    const TextTheme(
+      // Display styles
+      displayLarge: TextStyle(
+        fontSize: 57,
+        fontWeight: FontWeight.w400,
+        letterSpacing: -0.25,
+        height: 1.12,
       ),
-      headlineMedium: GoogleFonts.montserrat(
-        fontSize: _base * 1.6, // ~25.6
-        fontWeight: FontWeight.w700,
-        height: _lineHeightNormal,
+      displayMedium: TextStyle(
+        fontSize: 45,
+        fontWeight: FontWeight.w400,
+        letterSpacing: 0,
+        height: 1.16,
+      ),
+      displaySmall: TextStyle(
+        fontSize: 36,
+        fontWeight: FontWeight.w400,
+        letterSpacing: 0,
+        height: 1.22,
       ),
 
-      // Section & card titles
-      titleLarge: GoogleFonts.montserrat(
-        fontSize: _base * _scaleTitle, // ~20
-        fontWeight: FontWeight.w700,
-        height: _lineHeightNormal,
+      // Headline styles
+      headlineLarge: TextStyle(
+        fontSize: 32,
+        fontWeight: FontWeight.w400,
+        letterSpacing: 0,
+        height: 1.25,
       ),
-      titleMedium: GoogleFonts.montserrat(
-        fontSize: 18,
-        fontWeight: FontWeight.w600,
-        height: _lineHeightNormal,
+      headlineMedium: TextStyle(
+        fontSize: 28,
+        fontWeight: FontWeight.w400,
+        letterSpacing: 0,
+        height: 1.29,
       ),
-      titleSmall: GoogleFonts.montserrat(
+      headlineSmall: TextStyle(
+        fontSize: 24,
+        fontWeight: FontWeight.w400,
+        letterSpacing: 0,
+        height: 1.33,
+      ),
+
+      // Title styles
+      titleLarge: TextStyle(
+        fontSize: 22,
+        fontWeight: FontWeight.w400,
+        letterSpacing: 0,
+        height: 1.27,
+      ),
+      titleMedium: TextStyle(
         fontSize: 16,
-        fontWeight: FontWeight.w600,
-        height: _lineHeightNormal,
-      ),
-
-      // Body text (primary)
-      bodyLarge: GoogleFonts.montserrat(
-        fontSize: _base, // 16
         fontWeight: FontWeight.w500,
-        height: _lineHeightNormal,
+        letterSpacing: 0.15,
+        height: 1.50,
       ),
-      bodyMedium: GoogleFonts.montserrat(
+      titleSmall: TextStyle(
         fontSize: 14,
-        fontWeight: FontWeight.w400,
-        height: _lineHeightNormal,
-      ),
-      bodySmall: GoogleFonts.montserrat(
-        fontSize: 13,
-        fontWeight: FontWeight.w400,
-        height: _lineHeightLoose,
+        fontWeight: FontWeight.w500,
+        letterSpacing: 0.1,
+        height: 1.43,
       ),
 
-      // Labels / buttons
-      labelLarge: GoogleFonts.montserrat(
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-        height: _lineHeightNormal,
+      // Body styles
+      bodyLarge: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w400,
+        letterSpacing: 0.15,
+        height: 1.50,
       ),
-      labelSmall: GoogleFonts.montserrat(
+      bodyMedium: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        letterSpacing: 0.25,
+        height: 1.43,
+      ),
+      bodySmall: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w400,
+        letterSpacing: 0.4,
+        height: 1.33,
+      ),
+
+      // Label styles
+      labelLarge: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        letterSpacing: 0.1,
+        height: 1.43,
+      ),
+      labelMedium: TextStyle(
         fontSize: 12,
         fontWeight: FontWeight.w500,
-        height: _lineHeightNormal,
+        letterSpacing: 0.5,
+        height: 1.33,
       ),
+      labelSmall: TextStyle(
+        fontSize: 11,
+        fontWeight: FontWeight.w500,
+        letterSpacing: 0.5,
+        height: 1.45,
+      ),
+    ),
+  );
 
-      // Extras
-      displayLarge: GoogleFonts.montserrat(fontSize: 34, fontWeight: FontWeight.w800),
-    );
-  }
+  // Custom text styles for specific use cases
+  static TextStyle get buttonText => textTheme.labelLarge!.copyWith(
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.1,
+  );
 
-  // Optional helpers components can call directly
-  static TextStyle bold([double? size]) =>
-      GoogleFonts.montserrat(fontSize: size ?? _base, fontWeight: FontWeight.w700);
+  static TextStyle get caption => textTheme.bodySmall!.copyWith(
+    fontSize: 11,
+    fontWeight: FontWeight.w400,
+    letterSpacing: 0.5,
+  );
 
-  static TextStyle muted([double? size]) =>
-      GoogleFonts.montserrat(fontSize: size ?? _base, fontWeight: FontWeight.w400, color: Colors.grey[600]);
+  static TextStyle get overline => textTheme.labelSmall!.copyWith(
+    fontSize: 10,
+    fontWeight: FontWeight.w500,
+    letterSpacing: 1.5,
+    height: 1.6,
+  );
+
+  // App-specific text styles
+  static TextStyle get appTitle => textTheme.headlineMedium!.copyWith(
+    fontWeight: FontWeight.w700,
+    letterSpacing: -0.5,
+  );
+
+  static TextStyle get cardTitle => textTheme.titleMedium!.copyWith(
+    fontWeight: FontWeight.w600,
+  );
+
+  static TextStyle get cardSubtitle => textTheme.bodyMedium!.copyWith(
+    color: Colors.grey[600],
+  );
+
+  static TextStyle get inputLabel => textTheme.bodyMedium!.copyWith(
+    fontWeight: FontWeight.w500,
+  );
+
+  static TextStyle get inputHint => textTheme.bodyMedium!.copyWith(
+    color: Colors.grey[500],
+  );
+
+  static TextStyle get errorText => textTheme.bodySmall!.copyWith(
+    color: Colors.red[600],
+    fontWeight: FontWeight.w500,
+  );
+
+  static TextStyle get successText => textTheme.bodySmall!.copyWith(
+    color: Colors.green[600],
+    fontWeight: FontWeight.w500,
+  );
+
+  static TextStyle get linkText => textTheme.bodyMedium!.copyWith(
+    color: Colors.blue[600],
+    decoration: TextDecoration.underline,
+    fontWeight: FontWeight.w500,
+  );
+
+  // Navigation text styles
+  static TextStyle get bottomNavLabel => textTheme.labelSmall!.copyWith(
+    fontWeight: FontWeight.w500,
+  );
+
+  static TextStyle get tabLabel => textTheme.labelMedium!.copyWith(
+    fontWeight: FontWeight.w500,
+  );
+
+  // List item text styles
+  static TextStyle get listTitle => textTheme.titleMedium!.copyWith(
+    fontWeight: FontWeight.w500,
+  );
+
+  static TextStyle get listSubtitle => textTheme.bodyMedium!.copyWith(
+    color: Colors.grey[600],
+  );
+
+  // Status text styles
+  static TextStyle get statusActive => textTheme.bodySmall!.copyWith(
+    color: Colors.green[600],
+    fontWeight: FontWeight.w500,
+  );
+
+  static TextStyle get statusInactive => textTheme.bodySmall!.copyWith(
+    color: Colors.grey[500],
+    fontWeight: FontWeight.w500,
+  );
+
+  static TextStyle get statusWarning => textTheme.bodySmall!.copyWith(
+    color: Colors.orange[600],
+    fontWeight: FontWeight.w500,
+  );
+
+  static TextStyle get statusError => textTheme.bodySmall!.copyWith(
+    color: Colors.red[600],
+    fontWeight: FontWeight.w500,
+  );
 }

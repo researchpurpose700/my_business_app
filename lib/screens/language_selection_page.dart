@@ -1,8 +1,6 @@
 // language selection page
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:my_business_app/core/theme/dim.dart';
-import 'package:my_business_app/core/components/navigation/app_scaffold.dart';
 
 class LanguageSelectionPage extends StatelessWidget {
   final Function(String) onLanguageSelected;
@@ -19,20 +17,20 @@ class LanguageSelectionPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppScaffold(
+    return Scaffold(
       backgroundColor: Colors.white,
-      scrollBody: true,
-      useSafeArea: true,
-      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      body: Column(
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              SizedBox(height: 60),
+              const SizedBox(height: 60),
 
               // App Logo
               Icon(Icons.language, size: 90, color: Colors.brown),
 
-              SizedBox(height: Dim.l),
+              const SizedBox(height: 20),
 
               // Title
               Text(
@@ -44,7 +42,7 @@ class LanguageSelectionPage extends StatelessWidget {
                 ),
               ),
 
-              SizedBox(height: Dim.s),
+              const SizedBox(height: 10),
 
               // Subtitle
               Text(
@@ -56,14 +54,13 @@ class LanguageSelectionPage extends StatelessWidget {
                 ),
               ),
 
-              SizedBox(height: 40),
+              const SizedBox(height: 40),
 
               // Language list
-              ListView.separated(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
+              Expanded(
+                child: ListView.separated(
                   itemCount: languages.length,
-                  separatorBuilder: (_, __) => SizedBox(height: Dim.m),
+                  separatorBuilder: (_, __) => const SizedBox(height: 16),
                   itemBuilder: (context, index) {
                     final lang = languages[index];
                     return InkWell(
@@ -73,7 +70,7 @@ class LanguageSelectionPage extends StatelessWidget {
                       },
                       borderRadius: BorderRadius.circular(12),
                       child: Container(
-                        padding: EdgeInsets.symmetric(
+                        padding: const EdgeInsets.symmetric(
                             vertical: 16, horizontal: 20),
                         decoration: BoxDecoration(
                           color: Colors.white,
@@ -106,11 +103,11 @@ class LanguageSelectionPage extends StatelessWidget {
                     );
                   },
                 ),
+              ),
             ],
           ),
+        ),
+      ),
     );
   }
 }
-
-
-

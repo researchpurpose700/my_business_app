@@ -1,10 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:image_cropper/image_cropper.dart';
-import 'dart:io';
-import 'package:my_business_app/config/save_data.dart';
-import 'package:my_business_app/core/theme/dim.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:my_business_app/services/profile_service.dart';
+import 'package:my_business_app/services/image_service.dart';
+import 'package:my_business_app/utils/error_handling.dart';
+import 'package:my_business_app/utils/sizing.dart';
+import 'package:my_business_app/components/widget.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -14,129 +15,39 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  bool isOpen = true;
-  String timings = '10:00 AM – 9:00 PM';
-  bool _isLoading = true; // Add loading state
-
-  // Remove default values - will be loaded from JSON
-  String _fullName = '';
-  String _shopName = '';
-  String _phoneNumber = '';
-  String _address = '';
-
-  // Image handling
-  File? _coverImage;
-  File? _profileImage;
-  final ImagePicker _picker = ImagePicker();
+  final ProfileService _profileService = ProfileService.instance;
+  final ImageService _imageService = ImageService.instance;
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadFromStorage();
+    // Removed AppSizing.init(context) from here - this was causing the error
+    _loadProfile();
   }
 
-  Future<void> _loadFromStorage() async {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Move AppSizing.init(context) here - this is the fix
+    AppSizing.init(context);
+  }
+
+  Future<void> _loadProfile() async {
     setState(() => _isLoading = true);
 
-    try {
-      final json = await LocalStorage.loadProfile();
+    final result = await _profileService.loadProfile();
 
-      if (json != null && mounted) {
-        setState(() {
-          // Load username from multiple possible keys
-          _fullName = ((json['Username'] ?? json['username'] ?? json['fullName'] ?? json['name'])
-                  ?.toString() ?? '')
-              .trim();
-          if (_fullName.isEmpty) _fullName = 'User Name'; // Correct fallback
+    if (mounted) {
+      setState(() => _isLoading = false);
 
-          // Load shop name
-          _shopName = (json['shopName']?.toString() ?? '').trim();
-          if (_shopName.isEmpty) _shopName = 'Your Shop Name'; // Fallback
-
-          // Load phone number
-          _phoneNumber = (json['mobile']?.toString() ?? '').trim();
-          if (_phoneNumber.isEmpty) _phoneNumber = '+91 00000 00000'; // Fallback
-
-          // Load address
-          _address = (json['address']?.toString() ?? '').trim();
-          if (_address.isEmpty) _address = 'Add your shop address'; // Fallback
-
-          // Load timings
-          final savedTimings = (json['timings']?.toString() ?? '').trim();
-          if (savedTimings.isNotEmpty) timings = savedTimings;
-
-          // Load open/closed status
-          isOpen = (json['isOpen'] as bool?) ?? true;
-
-          // Load images
-          final coverPath = json['coverImage'] as String?;
-          final profilePath = json['profileImage'] as String?;
-
-          if (coverPath != null && coverPath.isNotEmpty) {
-            final coverFile = File(coverPath);
-            if (coverFile.existsSync()) _coverImage = coverFile;
-          }
-
-          if (profilePath != null && profilePath.isNotEmpty) {
-            final profileFile = File(profilePath);
-            if (profileFile.existsSync()) _profileImage = profileFile;
-          }
-        });
-      } else {
-        // Set default values if no data found
-        setState(() {
-          _fullName = 'User Name';
-          _shopName = 'Your Shop Name';
-          _phoneNumber = '+91 00000 00000';
-          _address = 'Add your shop address';
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error loading profile: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        // Set fallback values on error
-        setState(() {
-          _fullName = 'User Name';
-          _shopName = 'Your Shop Name';
-          _phoneNumber = '+91 00000 00000';
-          _address = 'Add your shop address';
-        });
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _persistToStorage() async {
-    try {
-      await LocalStorage.upsertProfile({
-        'Username': _fullName,
-        'shopName': _shopName,
-        'address': _address,
-        'mobile': _phoneNumber,
-        'timings': timings,
-        'isOpen': isOpen,
-        'coverImage': _coverImage?.path,
-        'profileImage': _profileImage?.path,
-      });
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error saving profile: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+      if (!result.isSuccess && result.errorMessage != null) {
+        ErrorHandler.showError(context, result.errorMessage!);
       }
     }
   }
 
-  void _pushFull(Widget page) {
+  void _navigateToPage(Widget page) {
     Navigator.of(context).push(
       PageRouteBuilder<void>(
         transitionDuration: const Duration(milliseconds: 320),
@@ -159,814 +70,429 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // Image selection methods
-  Future<void> _pickCoverImage() async {
-    await _showImageSourceDialog(true);
-  }
-
-  Future<void> _pickProfileImage() async {
-    await _showImageSourceDialog(false);
-  }
-
-  Future<void> _showImageSourceDialog(bool isCoverImage) async {
-    showModalBottomSheet(
+  Future<void> _handleCoverImageTap() async {
+    await ImageSourcePicker.show(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => SafeArea(
-        child: Wrap(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo_camera),
-              title: const Text('Camera'),
-              onTap: () {
-                Navigator.pop(context);
-                _selectImage(ImageSource.camera, isCoverImage);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text('Gallery'),
-              onTap: () {
-                Navigator.pop(context);
-                _selectImage(ImageSource.gallery, isCoverImage);
-              },
-            ),
-            if ((isCoverImage && _coverImage != null) ||
-                (!isCoverImage && _profileImage != null))
-              ListTile(
-                leading: const Icon(Icons.delete),
-                title: const Text('Remove Image'),
-                onTap: () async {
-                  Navigator.pop(context);
-                  setState(() {
-                    if (isCoverImage) {
-                      _coverImage = null;
-                    } else {
-                      _profileImage = null;
-                    }
-                  });
-                  await _persistToStorage();
-                },
-              ),
-          ],
-        ),
-      ),
+      isCoverImage: true,
+      currentImage: _profileService.coverImage,
+      onSourceSelected: (source) => _selectImage(source, ImageType.cover),
+      onRemove: () => _removeImage(ImageType.cover),
     );
   }
 
-  Future<void> _selectImage(ImageSource source, bool isCoverImage) async {
-    try {
-      final XFile? pickedFile = await _picker.pickImage(
-        source: source,
-        maxWidth: isCoverImage ? 1200 : 800,
-        maxHeight: isCoverImage ? 800 : 800,
-        imageQuality: 85,
+  Future<void> _handleProfileImageTap() async {
+    await ImageSourcePicker.show(
+      context: context,
+      isCoverImage: false,
+      currentImage: _profileService.profileImage,
+      onSourceSelected: (source) => _selectImage(source, ImageType.profile),
+      onRemove: () => _removeImage(ImageType.profile),
+    );
+  }
+
+  Future<void> _selectImage(ImageSource source, ImageType imageType) async {
+    final result = await _imageService.pickImage(
+      source: source,
+      imageType: imageType,
+      autoCrop: true,
+      context: context,
+    );
+
+    if (result.isSuccess && result.imageFile != null) {
+      final saveResult = await _profileService.saveProfile(
+        coverImage: imageType == ImageType.cover ? result.imageFile : null,
+        profileImage: imageType == ImageType.profile ? result.imageFile : null,
       );
 
-      if (pickedFile != null) {
-        // Automatically crop the selected image
-        final croppedFile = await _cropImage(pickedFile.path, isCoverImage);
+      if (mounted) {
+        setState(() {});
 
-        if (croppedFile != null) {
-          setState(() {
-            if (isCoverImage) {
-              _coverImage = File(croppedFile.path);
-            } else {
-              _profileImage = File(croppedFile.path);
-            }
-          });
-          await _persistToStorage();
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                  isCoverImage ? 'Cover photo updated!' : 'Profile picture updated!'
-              ),
-              backgroundColor: Colors.green,
-            ),
-          );
+        if (saveResult.isSuccess) {
+          final imageTypeName = imageType == ImageType.cover ? 'Cover photo' : 'Profile picture';
+          ErrorHandler.showSuccess(context, '$imageTypeName updated!');
+        } else if (saveResult.errorMessage != null) {
+          ErrorHandler.showError(context, saveResult.errorMessage!);
         }
       }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error selecting image: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+    } else if (!result.isCancelled && result.errorMessage != null) {
+      if (mounted) {
+        ErrorHandler.showError(context, result.errorMessage!);
+      }
     }
   }
 
-  Future<CroppedFile?> _cropImage(String imagePath, bool isCoverImage) async {
-    final croppedFile = await ImageCropper().cropImage(
-      sourcePath: imagePath,
-      compressFormat: ImageCompressFormat.jpg,
-      compressQuality: 90,
-      uiSettings: [
-        AndroidUiSettings(
-          toolbarTitle: isCoverImage ? 'Crop Cover Photo' : 'Crop Profile Picture',
-          toolbarColor: Theme.of(context).colorScheme.primary,
-          toolbarWidgetColor: Colors.white,
-          initAspectRatio: isCoverImage
-              ? CropAspectRatioPreset.ratio16x9
-              : CropAspectRatioPreset.square,
-          lockAspectRatio: !isCoverImage, // Lock square for profile, flexible for cover
-          aspectRatioPresets: isCoverImage ? [
-            CropAspectRatioPreset.original,
-            CropAspectRatioPreset.ratio16x9,
-            CropAspectRatioPreset.ratio4x3,
-            CropAspectRatioPreset.ratio3x2,
-          ] : [
-            CropAspectRatioPreset.square,
-            CropAspectRatioPreset.original,
-          ],
-        ),
-        IOSUiSettings(
-          title: isCoverImage ? 'Crop Cover Photo' : 'Crop Profile Picture',
-          aspectRatioLockEnabled: !isCoverImage,
-          resetAspectRatioEnabled: isCoverImage,
-          aspectRatioPresets: isCoverImage ? [
-            CropAspectRatioPreset.original,
-            CropAspectRatioPreset.ratio16x9,
-            CropAspectRatioPreset.ratio4x3,
-            CropAspectRatioPreset.ratio3x2,
-          ] : [
-            CropAspectRatioPreset.square,
-          ],
-        ),
-      ],
+  Future<void> _removeImage(ImageType imageType) async {
+    final confirmed = await ErrorHandler.showConfirmDialog(
+      context,
+      title: 'Remove Image',
+      message: 'Are you sure you want to remove this image?',
+      confirmText: 'Remove',
     );
-    return croppedFile;
+
+    if (confirmed) {
+      final saveResult = await _profileService.saveProfile(
+        coverImage: imageType == ImageType.cover ? null : _profileService.coverImage,
+        profileImage: imageType == ImageType.profile ? null : _profileService.profileImage,
+      );
+
+      if (mounted) {
+        setState(() {});
+
+        if (saveResult.isSuccess) {
+          ErrorHandler.showSuccess(context, 'Image removed successfully!');
+        } else if (saveResult.errorMessage != null) {
+          ErrorHandler.showError(context, saveResult.errorMessage!);
+        }
+      }
+    }
   }
 
-  void _editAllInfo() async {
-    final formKey = GlobalKey<FormState>();
-    final username = TextEditingController(text: _fullName); // ADDED: Username field
-    final name = TextEditingController(text: _shopName);
-    final phone = TextEditingController(text: _phoneNumber);
-    final addr = TextEditingController(text: _address);
-    final time = TextEditingController(text: timings);
-
-    final ok = await showDialog<bool>(
+  Future<void> _editProfileInfo() async {
+    final result = await showDialog<Map<String, String>?>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Edit Profile Info'),
-        content: SingleChildScrollView(
-          child: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // ADDED: Username field
-                TextFormField(
-                  controller: username,
-                  decoration: const InputDecoration(
-                    labelText: 'Your Name',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.person),
-                  ),
-                  validator: (v) => (v == null || v.trim().isEmpty)
-                      ? 'Enter your name'
-                      : null,
-                ),
-                SizedBox(height: Dim.s),
-                TextFormField(
-                  controller: name,
-                  decoration: const InputDecoration(
-                    labelText: 'Shop Name',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.store),
-                  ),
-                  validator: (v) => (v == null || v.trim().isEmpty)
-                      ? 'Enter shop name'
-                      : null,
-                ),
-                SizedBox(height: Dim.s),
-                TextFormField(
-                  controller: phone,
-                  decoration: const InputDecoration(
-                    labelText: 'Phone Number',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.phone),
-                  ),
-                  keyboardType: TextInputType.phone,
-                  validator: (v) {
-                    final t = (v ?? '').replaceAll(RegExp(r'\s+'), '');
-                    return (t.length < 10) ? 'Enter valid phone' : null;
-                  },
-                ),
-                SizedBox(height: Dim.s),
-                TextFormField(
-                  controller: addr,
-                  decoration: const InputDecoration(
-                    labelText: 'Address',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.location_on),
-                    hintText: 'Enter your shop address',
-                  ),
-                  maxLines: 2,
-                  validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'Enter address' : null,
-                ),
-                SizedBox(height: Dim.s),
-                TextFormField(
-                  controller: time,
-                  decoration: const InputDecoration(
-                    labelText: 'Shop Timings (e.g., 9:00 AM – 9:00 PM)',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.schedule),
-                  ),
-                  validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'Enter timings' : null,
-                ),
-              ],
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              if (formKey.currentState!.validate()) Navigator.pop(ctx, true);
-            },
-            child: const Text('Save'),
-          ),
-        ],
+      builder: (context) => ProfileEditDialog(
+        initialFullName: _profileService.fullName,
+        initialShopName: _profileService.shopName,
+        initialPhoneNumber: _profileService.phoneNumber,
+        initialAddress: _profileService.address,
+        initialTimings: _profileService.timings,
       ),
     );
 
-    if (ok == true) {
-      if (!mounted) return;
-      setState(() {
-        _fullName = username.text.trim(); // ADDED: Save username
-        _shopName = name.text.trim();
-        _phoneNumber = phone.text.trim();
-        _address = addr.text.trim();
-        timings = time.text.trim();
-      });
-      await _persistToStorage();
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Profile updated successfully!'),
-          backgroundColor: Colors.green,
-        ),
+    if (result != null) {
+      final saveResult = await _profileService.saveProfile(
+        fullName: result['fullName'],
+        shopName: result['shopName'],
+        phoneNumber: result['phoneNumber'],
+        address: result['address'],
+        timings: result['timings'],
       );
+
+      if (mounted) {
+        setState(() {});
+
+        if (saveResult.isSuccess) {
+          ErrorHandler.showSuccess(context, 'Profile updated successfully!');
+        } else if (saveResult.errorMessage != null) {
+          ErrorHandler.showError(context, saveResult.errorMessage!);
+        }
+      }
     }
+  }
+
+  void _handleAddressTap() {
+    if (_profileService.address == ProfileService.defaultAddress) {
+      _editProfileInfo();
+    } else {
+      ErrorHandler.showInfo(context, 'Maps will open later');
+    }
+  }
+
+  void _handlePhoneTap() {
+    ErrorHandler.showInfo(context, 'Dialer will open later');
   }
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final colorScheme = Theme.of(context).colorScheme;
 
-    // Show loading indicator if still loading
-    if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
-    }
-
-    return ListView(
-      padding: EdgeInsets.zero,
-      children: [
-        // -------- Banner (gradient first, optional image on top) --------
-        ClipRRect(
-          borderRadius: const BorderRadius.only(
-            bottomLeft: Radius.circular(20),
-            bottomRight: Radius.circular(20),
+    return LoadingOverlay(
+      isLoading: _isLoading,
+      loadingText: 'Loading profile...',
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          // Cover image section
+          CoverImageSection(
+            coverImage: _profileService.coverImage,
+            onTap: _handleCoverImageTap,
           ),
-          child: SizedBox(
-            height: 180,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                // base gradient (always visible)
-                Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF7DB2FF), Color(0xFF4A72DA)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                  ),
-                ),
 
-                // Cover image (shows if selected)
-                if (_coverImage != null)
-                  Image.file(
-                    _coverImage!,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => SizedBox.shrink(),
-                  ),
-
-                // scrim for legibility
-                Container(color: Colors.black.withOpacity(0.12)),
-
-                // Camera button - always shown
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 60,
-                  child: Center(
-                    child: Material(
-                      color: Theme.of(context).colorScheme.surface.withOpacity(0.92),
-                      shape: const StadiumBorder(),
-                      elevation: 2,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(30),
-                        onTap: _pickCoverImage,
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.photo_camera_rounded,
-                                  size: 18, color: Theme.of(context).colorScheme.onSurface),
-                              SizedBox(width: Dim.s),
-                              Text(
-                                _coverImage == null
-                                    ? 'Add a cover photo'
-                                    : 'Change cover photo',
-                                style: const TextStyle(fontWeight: FontWeight.w600),
-                              ),
-                            ],
-                          ),
-                        ),
+          // Profile header card
+          Container(
+            transform: Matrix4.translationValues(0, -AppSizing.height(3.1), 0), // ~-28px
+            padding: EdgeInsets.symmetric(horizontal: AppSizing.horizontalPadding),
+            child: AppCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Profile image section
+                      ProfileImageSection(
+                        profileImage: _profileService.profileImage,
+                        onTap: _handleProfileImageTap,
                       ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+                      SizedBox(width: AppSizing.md),
 
-        // -------- Header card --------
-        Container(
-          transform: Matrix4.translationValues(0, -28, 0),
-          padding: EdgeInsets.symmetric(horizontal: Dim.gutter),
-          child: AppCard(
-            padding: EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Profile picture + edit button
-                    Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        CircleAvatar(
-                          radius: 36,
-                          backgroundColor: const Color(0xFFE9EEF8),
-                          backgroundImage: _profileImage != null
-                              ? FileImage(_profileImage!)
-                              : null,
-                          child: _profileImage == null
-                              ? Icon(
-                            Icons.person_rounded,
-                            size: 40,
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
-                          )
-                              : null,
-                        ),
-                        Positioned(
-                          bottom: -2,
-                          right: -2,
-                          child: InkWell(
-                            onTap: _pickProfileImage,
-                            child: Container(
-                              padding: EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                color: cs.primary,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Theme.of(context).colorScheme.surface,
-                                  width: 2,
+                      // Profile info
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Shop name as main title
+                            Text(
+                              _profileService.shopName,
+                              style: TextStyle(
+                                fontSize: AppSizing.fontSize(18),
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            // Username as subtitle if different from default
+                            if (_profileService.fullName.isNotEmpty &&
+                                _profileService.fullName != ProfileService.defaultFullName)
+                              Padding(
+                                padding: EdgeInsets.only(top: AppSizing.xs / 2), // ~2px
+                                child: Text(
+                                  _profileService.fullName,
+                                  style: TextStyle(
+                                    fontSize: AppSizing.fontSize(14),
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.black54,
+                                  ),
                                 ),
                               ),
-                              child: Icon(
-                                _profileImage == null
-                                    ? Icons.add_rounded
-                                    : Icons.edit_rounded,
-                                size: 18,
-                                color: Theme.of(context).colorScheme.onPrimary,
-                              ),
+                            SizedBox(height: AppSizing.xs),
+                            InfoRow(
+                              icon: Icons.phone_rounded,
+                              text: _profileService.phoneNumber,
+                              onTap: _handlePhoneTap,
                             ),
-                          ),
+                            SizedBox(height: AppSizing.xs / 2), // ~2px
+                            InfoRow(
+                              icon: Icons.location_on_rounded,
+                              text: _profileService.address == ProfileService.defaultAddress
+                                  ? 'Tap to add your address'
+                                  : _profileService.address,
+                              onTap: _handleAddressTap,
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                    SizedBox(width: Dim.m),
+                      ),
 
-                    // UPDATED: Show both username and shop name
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      // Status and controls
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          // Show the shop name as the main title
-                          Text(
-                            _shopName,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                            ),
+                          StatusToggle(
+                            isOpen: _profileService.isOpen,
+                            onChanged: (value) async {
+                              _profileService.updateOpenStatus(value);
+                              setState(() {});
+                            },
                           ),
-                          // Show username as subtitle when present
-                          if (_fullName.isNotEmpty && _fullName != 'User Name')
-                            Padding(
-                              padding: EdgeInsets.only(top: 2),
-                              child: Text(
-                                _fullName,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
+                          SizedBox(height: AppSizing.xs),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.schedule_rounded,
+                                size: AppSizing.smallIconSize,
+                                color: Colors.black54,
+                              ),
+                              SizedBox(width: AppSizing.xs + 2), // ~6px
+                              Text(
+                                _profileService.timings,
+                                style: TextStyle(
+                                  fontSize: AppSizing.fontSize(12),
                                   color: Colors.black54,
                                 ),
                               ),
-                            ),
-                          SizedBox(height: 4),
-                          _IconLine(
-                            icon: Icons.phone_rounded,
-                            text: _phoneNumber,
-                            onTap: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Dialer will open later'),
-                                ),
-                              );
-                            },
+                            ],
                           ),
-                          SizedBox(height: 2),
-                          _IconLine(
-                            icon: Icons.location_on_rounded,
-                            text: _address == 'Add your shop address'
-                                ? 'Tap to add your address'
-                                : _address,
-                            onTap: () {
-                              if (_address == 'Add your shop address') {
-                                // Show edit dialog if address is still the default
-                                _editAllInfo();
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Maps will open later'),
-                                  ),
-                                );
-                              }
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              isOpen ? 'Open' : 'Closed',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w700,
-                                color: isOpen ? Colors.green : Colors.red,
-                              ),
+                          SizedBox(height: AppSizing.xs),
+                          TextButton.icon(
+                            onPressed: _editProfileInfo,
+                            icon: Icon(Icons.edit_rounded, size: AppSizing.fontSize(14)),
+                            label: Text(
+                              'Edit Info',
+                              style: TextStyle(fontSize: AppSizing.fontSize(12)),
                             ),
-                            SizedBox(width: Dim.s),
-                            Switch.adaptive(
-                              value: isOpen,
-                              onChanged: (v) async {
-                                setState(() => isOpen = v);
-                                await _persistToStorage();
-                              },
-                            ),
-                          ],
-                        ),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.schedule_rounded,
-                              size: 16,
-                              color: Colors.black54,
-                            ),
-                            SizedBox(width: Dim.s),
-                            Text(
-                              timings,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.black54,
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: Dim.s),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            FilledButton.icon(
-                              onPressed: () {
-                                Navigator.of(context).pushNamed('/settings');
-                              },
-                              icon: const Icon(Icons.brightness_6_rounded, size: 16),
-                              label: const Text('Theme'),
-                            ),
-                            SizedBox(width: Dim.s),
-                          ],
-                        ),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton.icon(
-                            onPressed: _editAllInfo,
-                            icon: const Icon(Icons.edit_rounded, size: 14),
-                            label: const Text('Edit Info'),
                             style: TextButton.styleFrom(
                               padding: EdgeInsets.zero,
                               minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
                           ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // KPI Cards
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: AppSizing.horizontalPadding),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Material(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(AppSizing.radiusMd),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(AppSizing.radiusMd),
+                      onTap: () => _navigateToPage(const FollowersPage()),
+                      child: AppCard(
+                        child: Row(
+                          children: [
+                            Icon(Icons.group_rounded, color: colorScheme.primary),
+                            SizedBox(width: AppSizing.sm + 2), // ~10px
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '3K',
+                                  style: TextStyle(
+                                    fontSize: AppSizing.fontSize(16),
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                Text(
+                                  'Followers',
+                                  style: TextStyle(
+                                    fontSize: AppSizing.fontSize(12),
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
-                  ],
+                  ),
                 ),
-                SizedBox(height: 0),
+                SizedBox(width: AppSizing.md),
+                Expanded(
+                  child: Material(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(AppSizing.radiusMd),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(AppSizing.radiusMd),
+                      onTap: () => _navigateToPage(const RatingPage()),
+                      child: AppCard(
+                        child: Row(
+                          children: [
+                            Icon(Icons.star_rounded, color: colorScheme.primary),
+                            SizedBox(width: AppSizing.sm + 2), // ~10px
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '4.9',
+                                  style: TextStyle(
+                                    fontSize: AppSizing.fontSize(16),
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                Text(
+                                  'Rating',
+                                  style: TextStyle(
+                                    fontSize: AppSizing.fontSize(12),
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
-        ),
 
-        // -------- KPIs --------
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: Dim.gutter),
-          child: Row(
-            children: [
-              Expanded(
-                child: Material(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(14),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(14),
-                    onTap: () => _pushFull(const FollowersPage()),
-                    child: AppCard(
-                      child: Row(
-                        children: [
-                          Icon(Icons.group_rounded, color: cs.primary),
-                          SizedBox(width: Dim.s),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '3K',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                              Text(
-                                'Followers',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.black54,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
+          SizedBox(height: AppSizing.md),
+
+          // Feature grid
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: AppSizing.horizontalPadding),
+            child: GridView(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: AppSizing.gridColumns,
+                mainAxisSpacing: AppSizing.md,
+                crossAxisSpacing: AppSizing.md,
+                childAspectRatio: 1.35,
               ),
-              SizedBox(width: Dim.m),
-              Expanded(
-                child: Material(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(14),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(14),
-                    onTap: () => _pushFull(const RatingPage()),
-                    child: AppCard(
-                      child: Row(
-                        children: [
-                          Icon(Icons.star_rounded, color: cs.primary),
-                          SizedBox(width: Dim.s),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '4.9',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                              Text(
-                                'Rating',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.black54,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+              children: [
+                FeatureBox(
+                  icon: Icons.photo_library_rounded,
+                  title: 'Posts',
+                  onTap: () => _navigateToPage(const PostsPage()),
                 ),
-              ),
-            ],
-          ),
-        ),
-
-        SizedBox(height: Dim.s),
-
-        // -------- Feature grid --------
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: Dim.gutter),
-          child: GridView(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 1.35,
+                FeatureBox(
+                  icon: Icons.inventory_2_rounded,
+                  title: 'Products',
+                  onTap: () => _navigateToPage(const ProductsPage()),
+                ),
+                FeatureBox(
+                  icon: Icons.local_offer_rounded,
+                  title: 'Offers',
+                  onTap: () => _navigateToPage(const OffersPage()),
+                ),
+                FeatureBox(
+                  icon: Icons.insights_rounded,
+                  title: 'Insights',
+                  onTap: () => _navigateToPage(const InsightsPage()),
+                ),
+              ],
             ),
-            children: [
-              FeatureBox(
-                icon: Icons.photo_library_rounded,
-                title: 'Posts',
-                onTap: () => _pushFull(const PostsPage()),
-              ),
-              FeatureBox(
-                icon: Icons.inventory_2_rounded,
-                title: 'Products',
-                onTap: () => _pushFull(const ProductsPage()),
-              ),
-              FeatureBox(
-                icon: Icons.local_offer_rounded,
-                title: 'Offers',
-                onTap: () => _pushFull(const OffersPage()),
-              ),
-              FeatureBox(
-                icon: Icons.insights_rounded,
-                title: 'Insights',
-                onTap: () => _pushFull(const InsightsPage()),
-              ),
-            ],
           ),
-        ),
 
-        SizedBox(height: Dim.l),
-      ],
-    );
-  }
-}
-
-// ----------------- Shared UI -----------------
-
-class AppCard extends StatelessWidget {
-  final Widget child;
-  final EdgeInsetsGeometry? padding;
-  final double radius;
-  const AppCard({
-    super.key,
-    required this.child,
-    this.padding,
-    this.radius = 14,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding:
-      padding ?? EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: const Color(0xFFE8EAF0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 6),
-          ),
+          SizedBox(height: AppSizing.xl),
         ],
       ),
-      child: child,
     );
   }
 }
 
-class FeatureBox extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final VoidCallback onTap;
-  const FeatureBox({
-    super.key,
-    required this.icon,
-    required this.title,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: AppCard(
-        radius: 16,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 28, color: cs.primary),
-            SizedBox(height: Dim.s),
-            Text(title, style: TextStyle(fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurface)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _IconLine extends StatelessWidget {
-  final IconData icon;
-  final String text;
-  final VoidCallback? onTap;
-  const _IconLine({required this.icon, required this.text, this.onTap});
-  @override
-  Widget build(BuildContext context) {
-    final row = Row(
-      children: [
-        Icon(icon, size: 16, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.45)),
-        SizedBox(width: Dim.s),
-        Expanded(
-          child: Text(
-            text,
-            style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-      ],
-    );
-    return onTap == null
-        ? row
-        : InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(6),
-      child: Padding(padding: EdgeInsets.all(2), child: row),
-    );
-  }
-}
-
-// ----------------- Full Pages (dummy) -----------------
-
+// Placeholder pages (keep existing implementations)
 class BaseSlidePage extends StatelessWidget {
   final String title;
   final Widget child;
   final bool showCreateButton;
-  const BaseSlidePage({super.key, required this.title, required this.child, this.showCreateButton = true});
+
+  const BaseSlidePage({
+    super.key,
+    required this.title,
+    required this.child,
+    this.showCreateButton = true
+  });
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
         title: Text(title),
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        surfaceTintColor: Theme.of(context).colorScheme.surface,
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
         elevation: 0.5,
-        foregroundColor: Theme.of(context).colorScheme.onSurface,
+        foregroundColor: Colors.black87,
       ),
-      body: Container(color: Theme.of(context).scaffoldBackgroundColor, child: child),
+      body: Container(color: const Color(0xFFF6F7FB), child: child),
       floatingActionButton: showCreateButton
           ? FloatingActionButton.extended(
-        onPressed: () => ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Create $title tapped'))),
+        onPressed: () => ErrorHandler.showInfo(context, 'Create $title tapped'),
         icon: const Icon(Icons.add_rounded),
         label: Text('New $title'),
-        backgroundColor: cs.primary,
-        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        backgroundColor: colorScheme.primary,
+        foregroundColor: Colors.white,
       )
           : null,
     );
   }
 }
 
+// Keep existing page implementations with minor updates for responsive design
 class PostsPage extends StatelessWidget {
   const PostsPage({super.key});
   @override
@@ -974,20 +500,19 @@ class PostsPage extends StatelessWidget {
     return BaseSlidePage(
       title: 'Posts',
       child: GridView.builder(
-        padding: EdgeInsets.all(Dim.m),
+        padding: EdgeInsets.all(AppSizing.horizontalPadding),
         itemCount: 9,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 3,
-          mainAxisSpacing: 6,
-          crossAxisSpacing: 6,
+          mainAxisSpacing: AppSizing.xs + 2,
+          crossAxisSpacing: AppSizing.xs + 2,
         ),
         itemBuilder: (_, i) => Container(
           decoration: BoxDecoration(
             color: const Color(0xFFECEFF5),
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(AppSizing.sm + 2),
           ),
-          child: Icon(Icons.image_rounded, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4)),
-          // Themed icon color will be applied in dark mode elsewhere if needed
+          child: const Icon(Icons.image_rounded, color: Colors.black38),
         ),
       ),
     );
@@ -1001,17 +526,28 @@ class ProductsPage extends StatelessWidget {
     return BaseSlidePage(
       title: 'Products',
       child: ListView.separated(
-        padding: EdgeInsets.all(Dim.m),
+        padding: EdgeInsets.all(AppSizing.horizontalPadding),
         itemCount: 8,
-        separatorBuilder: (_, __) => SizedBox(height: Dim.s),
-        itemBuilder: (_, i) => const AppCard(
+        separatorBuilder: (_, __) => SizedBox(height: AppSizing.sm),
+        itemBuilder: (_, i) => AppCard(
           child: Row(
             children: [
-              _ThumbIcon(),
-              SizedBox(width: Dim.m),
-              Expanded(child: Text('Sample Product Name')),
-              SizedBox(width: Dim.s),
-              Text('₹ 249', style: TextStyle(fontWeight: FontWeight.w700)),
+              Container(
+                width: AppSizing.width(14.4),
+                height: AppSizing.width(14.4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFECEFF5),
+                  borderRadius: BorderRadius.circular(AppSizing.sm + 2),
+                ),
+                child: const Icon(Icons.inventory_2_rounded, color: Colors.black38),
+              ),
+              SizedBox(width: AppSizing.md),
+              const Expanded(child: Text('Sample Product Name')),
+              SizedBox(width: AppSizing.sm),
+              Text('₹ 249', style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: AppSizing.fontSize(14),
+              )),
             ],
           ),
         ),
@@ -1027,16 +563,16 @@ class OffersPage extends StatelessWidget {
     return BaseSlidePage(
       title: 'Offers',
       child: ListView.separated(
-        padding: EdgeInsets.all(Dim.m),
+        padding: EdgeInsets.all(AppSizing.horizontalPadding),
         itemCount: 5,
-        separatorBuilder: (_, __) => SizedBox(height: Dim.s),
-        itemBuilder: (_, i) => const AppCard(
-          radius: 16,
+        separatorBuilder: (_, __) => SizedBox(height: AppSizing.sm + 2),
+        itemBuilder: (_, i) => AppCard(
+          radius: AppSizing.radiusLg,
           child: Row(
             children: [
-              Icon(Icons.local_offer_rounded),
-              SizedBox(width: Dim.m),
-              Expanded(child: Text('Flat 20% off • Aug 1 – Aug 31')),
+              const Icon(Icons.local_offer_rounded),
+              SizedBox(width: AppSizing.md),
+              const Expanded(child: Text('Flat 20% off • Aug 1 – Aug 31')),
             ],
           ),
         ),
@@ -1053,19 +589,13 @@ class InsightsPage extends StatelessWidget {
       title: 'Insights',
       showCreateButton: false,
       child: ListView(
-        padding: EdgeInsets.all(Dim.m),
-        children: const [
-          AppCard(
-            child: _InsightLine(label: 'Weekly Visitors', value: '120'),
-          ),
-          SizedBox(height: Dim.s),
-          AppCard(
-            child: _InsightLine(label: 'Top Product', value: 'Milk (2L)'),
-          ),
-          SizedBox(height: Dim.s),
-          AppCard(
-            child: _InsightLine(label: 'Repeat Customers (30d)', value: '36%'),
-          ),
+        padding: EdgeInsets.all(AppSizing.horizontalPadding),
+        children: [
+          AppCard(child: _InsightLine(label: 'Weekly Visitors', value: '120')),
+          SizedBox(height: AppSizing.sm + 2),
+          AppCard(child: _InsightLine(label: 'Top Product', value: 'Milk (2L)')),
+          SizedBox(height: AppSizing.sm + 2),
+          AppCard(child: _InsightLine(label: 'Repeat Customers (30d)', value: '36%')),
         ],
       ),
     );
@@ -1080,7 +610,7 @@ class FollowersPage extends StatelessWidget {
       title: 'Followers',
       showCreateButton: false,
       child: ListView.builder(
-        padding: EdgeInsets.all(Dim.m),
+        padding: EdgeInsets.all(AppSizing.horizontalPadding),
         itemCount: 20,
         itemBuilder: (_, i) => ListTile(
           leading: const CircleAvatar(child: Icon(Icons.person)),
@@ -1100,51 +630,37 @@ class RatingPage extends StatelessWidget {
       title: 'Rating',
       showCreateButton: false,
       child: ListView.builder(
-        padding: EdgeInsets.all(Dim.m),
+        padding: EdgeInsets.all(AppSizing.horizontalPadding),
         itemCount: 20,
-        itemBuilder: (_, i) => const AppCard(
+        itemBuilder: (_, i) => AppCard(
           child: ListTile(
-            leading: CircleAvatar(child: Icon(Icons.person)),
-            title: Text('Customer Review'),
+            leading: const CircleAvatar(child: Icon(Icons.person)),
+            title: const Text('Customer Review'),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    Icon(Icons.star, color: Colors.amber, size: 16),
-                    Icon(Icons.star, color: Colors.amber, size: 16),
-                    Icon(Icons.star, color: Colors.amber, size: 16),
-                    Icon(Icons.star, color: Colors.amber, size: 16),
-                    Icon(Icons.star, color: Colors.amber, size: 16),
-                    SizedBox(width: Dim.s),
-                    Text('5.0', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ...List.generate(5, (_) => Icon(
+                        Icons.star,
+                        color: Colors.amber,
+                        size: AppSizing.smallIconSize
+                    )),
+                    SizedBox(width: AppSizing.sm),
+                    Text('5.0', style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: AppSizing.fontSize(12),
+                    )),
                   ],
                 ),
-                SizedBox(height: 4),
-                Text('Great service and quality products!'),
+                SizedBox(height: AppSizing.xs),
+                Text('Great service and quality products!',
+                    style: TextStyle(fontSize: AppSizing.fontSize(12))),
               ],
             ),
           ),
         ),
       ),
-    );
-  }
-}
-
-// ----------------- Small helpers -----------------
-
-class _ThumbIcon extends StatelessWidget {
-  const _ThumbIcon();
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 54,
-      height: 54,
-      decoration: BoxDecoration(
-        color: const Color(0xFFECEFF5),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: const Icon(Icons.inventory_2_rounded, color: Colors.black38),
     );
   }
 }
@@ -1157,13 +673,16 @@ class _InsightLine extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.65))),
+        Text(label, style: TextStyle(
+          color: Colors.black54,
+          fontSize: AppSizing.fontSize(14),
+        )),
         const Spacer(),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.w800)),
+        Text(value, style: TextStyle(
+          fontWeight: FontWeight.w800,
+          fontSize: AppSizing.fontSize(14),
+        )),
       ],
     );
   }
 }
-
-
-

@@ -1,83 +1,102 @@
-/// Design system dimensions and spacing constants
-/// Use Dim.* everywhere for spacing. Do not use raw numeric EdgeInsets in new code.
+import 'package:flutter/material.dart';
+
+/// Dimension constants for consistent spacing and sizing throughout the app
 class Dim {
-  // Base spacing unit (4px) - 8-point system foundation
-  static const double _base = 1.0;
+  // Spacing
+  static const double xs = 4.0;
+  static const double s = 8.0;
+  static const double m = 16.0;
+  static const double l = 24.0;
+  static const double xl = 32.0;
+  static const double xxl = 48.0;
 
-  // Primary Spacing Scale (8-point system)
-  static const double xs = 4.0; // micro gaps
-  static const double s = 8.0; // small gaps / inline spacing
-  static const double m = 16.0; // default container padding / button spacing
-  static const double l = 24.0; // section spacing
-  static const double xl = 32.0; // large separation / hero spacing
+  // Border radius
+  static const double radiusXs = 4.0;
+  static const double radiusS = 8.0;
+  static const double radiusM = 12.0;
+  static const double radiusL = 16.0;
+  static const double radiusXl = 20.0;
 
-  // Extended Spacing Scale (4px increments)
-  static const double xxxs = _base * 1; // 4px
-  static const double xxs = _base * 2; // 8px
-  static const double xxl = _base * 10; // 40px
-  static const double xxxl = _base * 12; // 48px
+  // Button heights
+  static const double buttonHeight = 48.0;
+  static const double buttonHeightSmall = 36.0;
+  static const double buttonHeightLarge = 56.0;
 
-  // Semantic Aliases
-  static const double gutter = m; // screen side padding (16px)
-  static const double cardPadding = m; // default card inner padding (16px)
-  static const double sectionGap = l; // default gap between major sections (24px)
+  // Icon sizes
+  static const double iconSizeS = 16.0;
+  static const double iconSizeM = 24.0;
+  static const double iconSizeL = 32.0;
+  static const double iconSizeXl = 48.0;
 
-  // Gutter System (page margins)
-  static const double gutterXs = _base * 2; // 8px
-  static const double gutterS = _base * 4; // 16px
-  static const double gutterM = _base * 6; // 24px
-  static const double gutterL = _base * 8; // 32px
+  // Elevation
+  static const double elevation1 = 1.0;
+  static const double elevation2 = 2.0;
+  static const double elevation4 = 4.0;
+  static const double elevation8 = 8.0;
+  static const double elevation16 = 16.0;
 
-  // Component Specific Dimensions
-  // Buttons
-  static const double buttonHeight = _base * 12; // 48px
-  static const double buttonHeightSmall = _base * 10; // 40px
-  static const double buttonHeightLarge = _base * 14; // 56px
+  // App bar height
+  static const double appBarHeight = 56.0;
 
-  // Text Fields
-  static const double textFieldHeight = _base * 12; // 48px
-  static const double textFieldHeightSmall = _base * 10; // 40px
-  static const double textFieldHeightLarge = _base * 14; // 56px
+  // Bottom navigation height
+  static const double bottomNavHeight = 80.0;
 
-  // Icons
-  static const double iconSize = _base * 4; // 24px
-  static const double iconSizeSmall = _base * 5; // 20px
-  static const double iconSizeLarge = _base * 8; // 32px
+  // Card padding
+  static const double cardPadding = 16.0;
 
-  // Cards and Lists
-  static const double cardMinHeight = _base * 20; // 80px
-  static const double listTileHeight = _base * 14; // 56px
-  static const double listTileHeightDense = _base * 12; // 48px
+  // Screen padding
+  static const double screenPadding = 16.0;
+  static const double screenPaddingHorizontal = 16.0;
+  static const double screenPaddingVertical = 16.0;
 
-  // Border Radius
-  static const double radiusXs = _base * 1; // 4px
-  static const double radiusS = _base * 2; // 8px
-  static const double radiusM = _base * 3; // 12px
-  static const double radiusL = _base * 4; // 16px
-  static const double radiusXl = _base * 6; // 24px
+  // List item height
+  static const double listItemHeight = 56.0;
+  static const double listItemHeightSmall = 48.0;
+  static const double listItemHeightLarge = 72.0;
 
-  // Elevation Levels
-  static const double elevation0 = 0;
-  static const double elevation1 = 1;
-  static const double elevation2 = 2;
-  static const double elevation4 = 4;
-  static const double elevation6 = 6;
-  static const double elevation8 = 8;
-  static const double elevation12 = 12;
-  static const double elevation16 = 16;
-  static const double elevation24 = 24;
+  // Divider thickness
+  static const double dividerThickness = 1.0;
 
-  // Animation Durations (in milliseconds)
-  static const int animationFast = 150;
-  static const int animationMedium = 300;
-  static const int animationSlow = 500;
+  // Border width
+  static const double borderWidth = 1.0;
+  static const double borderWidthThick = 2.0;
 
-  // Breakpoints for Responsive Design
-  static const double breakpointMobile = 480;
-  static const double breakpointTablet = 768;
-  static const double breakpointDesktop = 1024;
-  static const double breakpointLargeDesktop = 1440;
+  // Avatar sizes
+  static const double avatarSizeS = 32.0;
+  static const double avatarSizeM = 48.0;
+  static const double avatarSizeL = 64.0;
+  static const double avatarSizeXl = 96.0;
 
-  // Private constructor to prevent instantiation
-  Dim._();
+  // Input field height
+  static const double inputFieldHeight = 48.0;
+  static const double inputFieldHeightLarge = 56.0;
+
+  // Chip height
+  static const double chipHeight = 32.0;
+  static const double chipHeightSmall = 24.0;
+
+  // Progress indicator size
+  static const double progressIndicatorSize = 24.0;
+  static const double progressIndicatorSizeSmall = 16.0;
+  static const double progressIndicatorSizeLarge = 32.0;
+
+  // Dialog dimensions
+  static const double dialogMaxWidth = 400.0;
+  static const double dialogMinWidth = 280.0;
+
+  // Bottom sheet dimensions
+  static const double bottomSheetMaxHeight = 0.9;
+  static const double bottomSheetMinHeight = 0.3;
+
+  // Tab bar height
+  static const double tabBarHeight = 48.0;
+
+  // Toolbar height
+  static const double toolbarHeight = 56.0;
+
+  // Status bar height (approximate)
+  static const double statusBarHeight = 24.0;
+
+  // Navigation bar height (approximate)
+  static const double navigationBarHeight = 56.0;
 }

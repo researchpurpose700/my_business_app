@@ -1,313 +1,136 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../config/save_data.dart';
+import '../services/auth_service.dart';
+import '../components/input_field.dart';
+import '../components/service_dropdown.dart';
+import '../utils/validators.dart';
+import '../utils/error_handling.dart';
+import '../utils/sizing.dart';
+import '../utils/app_icons.dart';
 import '../core/language/generated/app_localizations.dart';
-import 'package:my_business_app/core/theme/dim.dart';
 
 class BusinessRegistrationPage extends StatefulWidget {
   final VoidCallback onFinished;
   final VoidCallback? onSwitchToLogin;
-  const BusinessRegistrationPage({Key? key, required this.onFinished, this.onSwitchToLogin})
-      : super(key: key);
+
+  const BusinessRegistrationPage({
+    Key? key,
+    required this.onFinished,
+    this.onSwitchToLogin,
+  }) : super(key: key);
 
   @override
-  State<BusinessRegistrationPage> createState() =>
-      _BusinessRegistrationPageState();
+  State<BusinessRegistrationPage> createState() => _BusinessRegistrationPageState();
 }
 
 class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
-  final int _cooldownSeconds = 30;
-  int _resendIn = 0;
-  Timer? _cooldownTimer;
-
   final _formKey = GlobalKey<FormState>();
+  final _fullNameController = TextEditingController();
+  final _shopNameController = TextEditingController();
+  final _mobileController = TextEditingController();
+  final _otpController = TextEditingController();
+
+  final _authService = AuthService();
+  final _registrationService = AuthService();
+
   bool _isLoading = false;
-
-  final TextEditingController _fullNameController = TextEditingController();
-  final TextEditingController _shopNameController = TextEditingController();
-  final TextEditingController _mobileController = TextEditingController();
-  final TextEditingController _otpController = TextEditingController();
-
+  int _resendCountdown = 0;
   String? _selectedService;
-  String _countryCode = '+91';
-  bool _isOtpSent = false;
-
-  final String _dummyOtp = "123456";
-
-  final List<String> services = [
-    'groceryAndEssentials',
-    'pharmacyAndHealth',
-    'electronics',
-    'fashionAndClothing',
-    'foodAndBeverages',
-    'homeAndGarden',
-    'beautyAndPersonalCare',
-    'automotive',
-    'professionalServices',
-    'other',
-  ];
 
   @override
   void initState() {
     super.initState();
-    _loadSaved();
+    _initializeServices();
   }
 
-  // ---------- LOCAL FILE HANDOFF ----------
-  Future<void> _saveData() async {
-    final data = {
-      'fullName': _fullNameController.text.trim(),
-      'shopName': _shopNameController.text.trim(),
-      'service': _selectedService,
-      'countryCode': _countryCode,
-      'mobile': _mobileController.text.trim(),
-    };
-    await LocalStorage.upsertProfile(data);
+  void _initializeServices() {
+    _authService.initialize(
+      onCountdownUpdate: (countdown) {
+        if (mounted) setState(() => _resendCountdown = countdown);
+      },
+      onError: (message) => ErrorHandler.showError(context, message),
+      onSuccess: (message) => ErrorHandler.showSuccess(context, message),
+    );
+
+    _registrationService.initialize(
+      onError: (message) => ErrorHandler.showError(context, message),
+      onSuccess: (message) => ErrorHandler.showSuccess(context, message),
+    );
+
+    _loadSavedData();
   }
 
-  Future<void> _loadSaved() async {
-    final jsonMap = await LocalStorage.loadProfile();
-    if (jsonMap != null) {
-      _fullNameController.text = jsonMap['fullName'] ?? '';
-      _shopNameController.text = jsonMap['shopName'] ?? '';
-      _mobileController.text = jsonMap['mobile'] ?? '';
-      _countryCode = jsonMap['countryCode'] ?? '+91';
-      _selectedService = jsonMap['service'];
+  Future<void> _loadSavedData() async {
+    final savedData = await _registrationService.loadSavedRegistrationData();
+    if (savedData != null && mounted) {
+      _fullNameController.text = savedData['fullName'] ?? '';
+      _shopNameController.text = savedData['shopName'] ?? '';
+      _mobileController.text = savedData['mobile'] ?? '';
+      _selectedService = savedData['service'];
       setState(() {});
     }
   }
-  // ----------------------------------------
 
-  void _sendOtp({bool fromAuto = false}) {
-    final phone = _mobileController.text.trim();
-    final pattern = RegExp(r'^[6-9]\d{9}$');
+  void _onMobileChanged(String value) {
+    _registrationService.updateRegistrationData(mobile: value);
+    _registrationService.autoSaveRegistrationData();
 
-    if (!pattern.hasMatch(phone)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Enter a valid 10-digit mobile starting with 6,7,8,9")),
-      );
-      return;
+    if (Validators.isValidMobile(value) && !_authService.isOtpSent) {
+      _authService.sendOtp(value, fromAuto: true);
     }
-
-    if (fromAuto && _isOtpSent) return;
-
-    if (_resendIn > 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please wait $_resendIn s to resend OTP')),
-      );
-      return;
-    }
-
-    setState(() => _isOtpSent = true);
-    _startCooldown();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(AppLocalizations.of(context)!.otpSentToYourMobileNumber)),
-    );
   }
 
-  Future<void> _submit() async {
-    if (_formKey.currentState!.validate()) {
-      if (_otpController.text != _dummyOtp) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("❌ Invalid OTP. Please enter 123456")),
-        );
-        return;
-      }
+  void _onFieldChanged() {
+    _registrationService.updateRegistrationData(
+      fullName: _fullNameController.text,
+      shopName: _shopNameController.text,
+      service: _selectedService,
+      mobile: _mobileController.text,
+    );
+    _registrationService.autoSaveRegistrationData();
+  }
 
-      setState(() => _isLoading = true);
-      await Future.delayed(const Duration(seconds: 2));
+  void _sendOtp() {
+    if (Validators.validateMobile(_mobileController.text) == null) {
+      _authService.sendOtp(_mobileController.text.trim());
+    } else {
+      ErrorHandler.showError(context, 'Please enter a valid mobile number');
+    }
+  }
 
-      await _saveData();
+  Future<void> _submitRegistration() async {
+    if (!_formKey.currentState!.validate()) return;
 
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.accountCreatedSuccessfully)),
-      );
+    setState(() => _isLoading = true);
 
+    final success = await _registrationService.completeRegistration(
+      fullName: _fullNameController.text,
+      shopName: _shopNameController.text,
+      service: _selectedService!,
+      mobile: _mobileController.text,
+      otp: _otpController.text,
+    );
+
+    setState(() => _isLoading = false);
+
+    if (success) {
       widget.onFinished();
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    AppSizing.init(context);
+
     return Scaffold(
       body: SafeArea(
         child: Stack(
           children: [
-            Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF667eea), Color(0xFF764ba2)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-            ),
-            Positioned(top: 100, left: 50, child: _floatingCircle(60)),
-            Positioned(bottom: 150, right: 40, child: _floatingCircle(80)),
-            Positioned(bottom: 100, left: 100, child: _floatingCircle(40)),
+            AppIcons.backgroundDecoration(),
             Center(
               child: SingleChildScrollView(
-                padding: EdgeInsets.all(20),
-                child: Container(
-                  padding: EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface.withOpacity(0.98),
-                    borderRadius: BorderRadius.circular(30),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 20,
-                        offset: Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _logoBox(),
-                        SizedBox(height: Dim.m),
-                        Text(AppLocalizations.of(context)!.joinOurNetwork, style: Theme.of(context).textTheme.titleLarge),
-                        SizedBox(height: 6),
-                        Text(AppLocalizations.of(context)!.registerYourBusinessInMinutes, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.75))),
-                        SizedBox(height: Dim.l),
-
-                        _buildTextField(
-                          controller: _fullNameController,
-                          label: AppLocalizations.of(context)!.fullName,
-                          validator: (val) => val!.isEmpty
-                              ? AppLocalizations.of(context)!.enterFullName
-                              : null,
-                        ),
-                        _buildTextField(
-                          controller: _shopNameController,
-                          label: AppLocalizations.of(context)!.shopName,
-                          validator: (val) => val!.isEmpty
-                              ? AppLocalizations.of(context)!.enterShopName
-                              : null,
-                        ),
-
-                        DropdownButtonFormField<String>(
-                          value: _selectedService,
-                          hint: Text(AppLocalizations.of(context)!.selectYourCategory),
-                          items: services
-                              .map((s) => DropdownMenuItem(
-                            value: s,
-                            child: Text(_getServiceLabel(context, s)),
-                          ))
-                              .toList(),
-                          onChanged: (val) => setState(() => _selectedService = val),
-                          validator: (val) => val == null
-                              ? AppLocalizations.of(context)!.pleaseSelectAService
-                              : null,
-                          decoration: _dropdownDecoration(),
-                        ),
-                        SizedBox(height: Dim.m),
-
-                        Row(
-                          children: [
-                            ConstrainedBox(
-                              constraints: BoxConstraints(minWidth: 72, maxWidth: 100),
-                              child: DropdownButtonFormField<String>(
-                                value: _countryCode,
-                                items: ['+91', '+1', '+44']
-                                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                                    .toList(),
-                                onChanged: (val) => setState(() => _countryCode = val!),
-                                decoration: _dropdownDecoration(),
-                              ),
-                            ),
-                            SizedBox(width: Dim.s),
-                            Expanded(
-                              child: TextFormField(
-                                controller: _mobileController,
-                                keyboardType: TextInputType.phone,
-                                maxLength: 10,
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.digitsOnly,
-                                  LengthLimitingTextInputFormatter(10),
-                                ],
-                                validator: (val) {
-                                  if (val == null || val.isEmpty) {
-                                    return AppLocalizations.of(context)!.enter10DigitMobile;
-                                  }
-                                  final pattern = RegExp(r'^[6-9]\d{9}$');
-                                  if (!pattern.hasMatch(val)) {
-                                    return "Mobile must start with 6,7,8,9 and be 10 digits";
-                                  }
-                                  return null;
-                                },
-                                onChanged: (val) {
-                                  final pattern = RegExp(r'^[6-9]\d{9}$');
-                                  if (pattern.hasMatch(val) && !_isOtpSent) {
-                                    _sendOtp(fromAuto: true);
-                                  }
-                                },
-                                decoration: InputDecoration(
-                                  labelText: AppLocalizations.of(context)!.mobileNumber,
-                                  counterText: '',
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: Dim.m),
-
-                        _otpBox(context),
-                        SizedBox(height: Dim.l),
-
-                        // Create Account Button
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: _isLoading ? null : _submit,
-                            style: ElevatedButton.styleFrom(padding: EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-                            child: _isLoading
-                                ? CircularProgressIndicator(color: Theme.of(context).colorScheme.onPrimary)
-                                : Text(AppLocalizations.of(context)!.createAccount.toUpperCase(), style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Theme.of(context).colorScheme.onPrimary)),
-                          ),
-                        ),
-                        SizedBox(height: Dim.m),
-
-                        // Back to Login Button
-                        if (widget.onSwitchToLogin != null)
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton(
-                              onPressed: widget.onSwitchToLogin,
-                              style: OutlinedButton.styleFrom(
-                                padding: EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                side: const BorderSide(color: Colors.deepPurple, width: 2),
-                              ),
-                              child: Text("ALREADY HAVE ACCOUNT? SIGN IN", style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Theme.of(context).colorScheme.primary)),
-                            ),
-                          ),
-                        SizedBox(height: Dim.s),
-                        GestureDetector(
-                          onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Terms page coming soon...")),
-                          ),
-                          child: Text(
-                            AppLocalizations.of(context)!.termsAndPrivacy,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.blue,
-                              decoration: TextDecoration.underline,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                padding: EdgeInsets.all(AppSizing.formPadding),
+                child: _buildRegistrationCard(),
               ),
             ),
           ],
@@ -316,74 +139,157 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
     );
   }
 
-  Widget _logoBox() {
+  Widget _buildRegistrationCard() {
     return Container(
-      width: 64,
-      height: 64,
+      padding: EdgeInsets.all(AppSizing.cardPadding),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        gradient: const LinearGradient(
-          colors: [Color(0xFFFF6B6B), Color(0xFF4ECDC4)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Center(
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: Image.asset(
-            'assets/images/logo.png',
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => const Icon(Icons.store, size: 40, color: Colors.white),
+        color: Colors.white.withOpacity(0.95),
+        borderRadius: BorderRadius.circular(AppSizing.radiusLg),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 20,
+            offset: Offset(0, 10),
           ),
+        ],
+      ),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppIcons.businessLogo(),
+            SizedBox(height: AppSizing.md),
+            _buildHeader(),
+            SizedBox(height: AppSizing.lg),
+            _buildFormFields(),
+            SizedBox(height: AppSizing.md),
+            _buildMobileInput(),
+            SizedBox(height: AppSizing.md),
+            _buildOtpSection(),
+            SizedBox(height: AppSizing.lg),
+            _buildSubmitButton(),
+            SizedBox(height: AppSizing.md),
+            if (widget.onSwitchToLogin != null) _buildBackToLoginButton(),
+            SizedBox(height: AppSizing.sm),
+            _buildTermsText(),
+          ],
         ),
       ),
     );
   }
 
-  Widget _otpBox(BuildContext context) {
+  Widget _buildHeader() {
+    return Column(
+      children: [
+        Text(
+          AppLocalizations.of(context)!.joinOurNetwork,
+          style: TextStyle(
+            fontSize: AppSizing.fontSize(26),
+            fontWeight: FontWeight.bold,
+            color: Colors.grey[800],
+          ),
+        ),
+        SizedBox(height: AppSizing.xs),
+        Text(
+          AppLocalizations.of(context)!.registerYourBusinessInMinutes,
+          style: TextStyle(
+            fontSize: AppSizing.fontSize(16),
+            color: Colors.grey[600],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFormFields() {
+    return Column(
+      children: [
+        CustomInputField(
+          controller: _fullNameController,
+          labelText: AppLocalizations.of(context)!.fullName,
+          validator: Validators.validateFullName,
+          onChanged: (_) => _onFieldChanged(),
+        ),
+        SizedBox(height: AppSizing.md),
+        CustomInputField(
+          controller: _shopNameController,
+          labelText: AppLocalizations.of(context)!.shopName,
+          validator: Validators.validateShopName,
+          onChanged: (_) => _onFieldChanged(),
+        ),
+        SizedBox(height: AppSizing.md),
+        ServiceDropdown(
+          selectedService: _selectedService,
+          onChanged: (value) {
+            setState(() => _selectedService = value);
+            _onFieldChanged();
+          },
+          validator: Validators.validateServiceCategory,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMobileInput() {
+    return CustomInputField(
+      controller: _mobileController,
+      labelText: AppLocalizations.of(context)!.mobileNumber,
+      validator: Validators.validateMobile,
+      onChanged: _onMobileChanged,
+      keyboardType: TextInputType.phone,
+      maxLength: 10,
+      showCountryCode: true,
+      inputFormatters: [
+        FilteringTextInputFormatter.digitsOnly,
+        LengthLimitingTextInputFormatter(10),
+      ],
+    );
+  }
+
+  Widget _buildOtpSection() {
     return Container(
-      padding: EdgeInsets.all(Dim.m),
+      padding: EdgeInsets.all(AppSizing.md),
       decoration: BoxDecoration(
         color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSizing.radiusMd),
         border: Border.all(color: Colors.grey[300]!),
       ),
       child: Column(
         children: [
-          Text(AppLocalizations.of(context)!.enterOtp,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          SizedBox(height: Dim.s),
-          TextFormField(
+          Text(
+            AppLocalizations.of(context)!.enterOtp,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: AppSizing.fontSize(16),
+            ),
+          ),
+          SizedBox(height: AppSizing.sm),
+          CustomInputField(
             controller: _otpController,
-            maxLength: 6,
+            labelText: "- - - - - -",
+            validator: Validators.validateOtp,
             keyboardType: TextInputType.number,
+            maxLength: 6,
             inputFormatters: [
               FilteringTextInputFormatter.digitsOnly,
               LengthLimitingTextInputFormatter(6),
             ],
-            validator: (val) => val!.length != 6
-                ? AppLocalizations.of(context)!.enter6DigitOtp
-                : null,
-            decoration: InputDecoration(
-              labelText: '- - - - - -',
-              filled: true,
-              fillColor: Colors.grey[100],
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-              counterText: '',
-            ),
           ),
           TextButton(
-            onPressed: (_isOtpSent && _resendIn > 0) ? null : () => _sendOtp(),
+            onPressed: (_authService.isOtpSent && _resendCountdown > 0) ? null : _sendOtp,
             child: Text(
-              !_isOtpSent
+              !_authService.isOtpSent
                   ? AppLocalizations.of(context)!.didntReceiveSendOtp
-                  : (_resendIn > 0
-                  ? 'Resend in ${_resendIn}s'
+                  : (_resendCountdown > 0
+                  ? 'Resend in ${_resendCountdown}s'
                   : AppLocalizations.of(context)!.resendOtp),
               style: TextStyle(
-                color: (_isOtpSent && _resendIn > 0) ? Colors.grey : Colors.blue,
+                color: (_authService.isOtpSent && _resendCountdown > 0)
+                    ? Colors.grey
+                    : Colors.blue,
                 fontWeight: FontWeight.w600,
+                fontSize: AppSizing.fontSize(14),
               ),
             ),
           ),
@@ -392,103 +298,79 @@ class _BusinessRegistrationPageState extends State<BusinessRegistrationPage> {
     );
   }
 
-  InputDecoration _dropdownDecoration() {
-    return InputDecoration(
-      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-      filled: true,
-      fillColor: Colors.grey[100],
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    int? maxLength,
-    TextInputType keyboardType = TextInputType.text,
-    String? Function(String?)? validator,
-  }) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 8.0),
-      child: TextFormField(
-        controller: controller,
-        maxLength: maxLength,
-        keyboardType: keyboardType,
-        validator: validator,
-        decoration: InputDecoration(
-          labelText: label,
-          filled: true,
-          fillColor: Colors.grey[100],
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-          counterText: '',
+  Widget _buildSubmitButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: AppSizing.buttonHeight,
+      child: ElevatedButton(
+        onPressed: _isLoading ? null : _submitRegistration,
+        style: ElevatedButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppSizing.radiusMd),
+          ),
+          backgroundColor: Colors.deepPurple,
+        ),
+        child: _isLoading
+            ? const CircularProgressIndicator(color: Colors.white)
+            : Text(
+          AppLocalizations.of(context)!.createAccount.toUpperCase(),
+          style: TextStyle(
+            fontSize: AppSizing.fontSize(18),
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
         ),
       ),
     );
   }
 
-  Widget _floatingCircle(double size) {
-    return Container(
-      width: size,
-      height: size,
-      decoration:
-      BoxDecoration(color: Colors.white.withOpacity(0.1), shape: BoxShape.circle),
+  Widget _buildBackToLoginButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: AppSizing.buttonHeight,
+      child: OutlinedButton(
+        onPressed: widget.onSwitchToLogin,
+        style: OutlinedButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppSizing.radiusMd),
+          ),
+          side: const BorderSide(color: Colors.deepPurple, width: 2),
+        ),
+        child: Text(
+          "ALREADY HAVE ACCOUNT? SIGN IN",
+          style: TextStyle(
+            fontSize: AppSizing.fontSize(16),
+            fontWeight: FontWeight.bold,
+            color: Colors.deepPurple,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTermsText() {
+    return GestureDetector(
+      onTap: () => ErrorHandler.showInfo(context, "Terms page coming soon..."),
+      child: Text(
+        AppLocalizations.of(context)!.termsAndPrivacy,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: AppSizing.fontSize(12),
+          color: Colors.blue,
+          decoration: TextDecoration.underline,
+        ),
+      ),
     );
   }
 
   @override
   void dispose() {
-    _cooldownTimer?.cancel();
+    _authService.dispose();
+    _registrationService.dispose();
     _fullNameController.dispose();
     _shopNameController.dispose();
     _mobileController.dispose();
     _otpController.dispose();
     super.dispose();
   }
-
-  void _startCooldown() {
-    _cooldownTimer?.cancel();
-    setState(() => _resendIn = _cooldownSeconds);
-    _cooldownTimer = Timer.periodic(const Duration(seconds: 1), (t) {
-      if (!mounted) {
-        t.cancel();
-        return;
-      }
-      if (_resendIn <= 1) {
-        t.cancel();
-        setState(() => _resendIn = 0);
-      } else {
-        setState(() => _resendIn--);
-      }
-    });
-  }
 }
-
-String _getServiceLabel(BuildContext context, String key) {
-  switch (key) {
-    case 'groceryAndEssentials':
-      return AppLocalizations.of(context)!.groceryAndEssentials;
-    case 'pharmacyAndHealth':
-      return AppLocalizations.of(context)!.pharmacyAndHealth;
-    case 'electronics':
-      return AppLocalizations.of(context)!.electronics;
-    case 'fashionAndClothing':
-      return AppLocalizations.of(context)!.fashionAndClothing;
-    case 'foodAndBeverages':
-      return AppLocalizations.of(context)!.foodAndBeverages;
-    case 'homeAndGarden':
-      return AppLocalizations.of(context)!.homeAndGarden;
-    case 'beautyAndPersonalCare':
-      return AppLocalizations.of(context)!.beautyAndPersonalCare;
-    case 'automotive':
-      return AppLocalizations.of(context)!.automotive;
-    case 'professionalServices':
-      return AppLocalizations.of(context)!.professionalServices;
-    case 'other':
-      return AppLocalizations.of(context)!.other;
-    default:
-      return key;
-  }
-}
-
-
-

@@ -1,4 +1,3 @@
-// lib/core/theme/app_theme.dart
 import 'package:flutter/material.dart';
 import 'colors.dart';
 import 'dim.dart';

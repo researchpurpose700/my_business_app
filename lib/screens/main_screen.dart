@@ -21,7 +21,7 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _pages = <Widget>[
     HomePage(),
     const OrderPage(),
-    const listingPage(),
+    const ListingPage(),
     const ProfileScreen(), // <-- this must match the class name in profile_page.dart
   ];
 
@@ -58,7 +58,7 @@ class _MainScreenState extends State<MainScreen> {
         child: SafeArea(
           child: Container(
             height: 90,
-            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: <Widget>[
@@ -120,7 +120,7 @@ class NavItem extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
         decoration: BoxDecoration(
           color: isActive ? const Color(0xfff8f7ff) : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
@@ -133,7 +133,7 @@ class NavItem extends StatelessWidget {
               size: 24,
               color: isActive ? const Color(0xFF008080) : const Color(0xff8b8b8b),
             ),
-            SizedBox(height: 4),
+            const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
@@ -149,4 +149,3 @@ class NavItem extends StatelessWidget {
     );
   }
 }
-
