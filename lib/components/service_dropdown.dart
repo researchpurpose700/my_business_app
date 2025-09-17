@@ -9,18 +9,18 @@ class ServiceDropdown extends StatelessWidget {
   final String? Function(String?)? validator;
 
   const ServiceDropdown({
-    Key? key,
+    super.key,
     required this.selectedService,
     required this.onChanged,
     this.validator,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: AppSizing.sm),
       child: DropdownButtonFormField<String>(
-        value: selectedService,
+        initialValue: selectedService,
         hint: Text(
           AppLocalizations.of(context)!.selectYourCategory,
           style: TextStyle(

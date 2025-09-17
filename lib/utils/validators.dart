@@ -271,7 +271,7 @@ class ListingValidators {
       return 'Please enter your experience';
     }
 
-    if (value.trim().length < 1) {
+    if (value.trim().isEmpty) {
       return 'Experience is required';
     }
 
@@ -616,7 +616,7 @@ class StoryValidators {
 
     // Check duration
     if (durationSeconds != null && durationSeconds > maxVideoSeconds) {
-      return 'Video duration cannot exceed ${maxVideoSeconds} seconds';
+      return 'Video duration cannot exceed $maxVideoSeconds seconds';
     }
 
     return null;
@@ -670,7 +670,7 @@ class StoryValidators {
 
     final trimmedComment = comment.trim();
 
-    if (trimmedComment.length < 1) {
+    if (trimmedComment.isEmpty) {
       return 'Comment must have at least 1 character';
     }
 

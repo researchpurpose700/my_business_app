@@ -1,9 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:my_business_app/services/image_service.dart';
-import 'package:my_business_app/services/profile_service.dart';
-import 'package:my_business_app/utils/error_handling.dart';
 import 'package:my_business_app/utils/sizing.dart';
 import 'package:my_business_app/utils/validators.dart';
 import 'package:my_business_app/components/input_field.dart';

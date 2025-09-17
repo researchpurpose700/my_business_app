@@ -53,8 +53,9 @@ class _ListingFormPageState extends State<ListingFormPage> {
     _descController = TextEditingController();
 
     // Add listeners to detect changes
-    [_titleController, _experienceController, _warrantyController, _priceController, _descController]
-        .forEach((controller) => controller.addListener(_markAsChanged));
+    for (var controller in [_titleController, _experienceController, _warrantyController, _priceController, _descController]) {
+      controller.addListener(_markAsChanged);
+    }
   }
 
   void _initializeFormData() {

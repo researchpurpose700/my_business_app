@@ -12,7 +12,7 @@ class StatsCard extends StatelessWidget {
   final bool isLoading;
 
   const StatsCard({
-    Key? key,
+    super.key,
     required this.title,
     required this.value,
     required this.subtitle,
@@ -20,7 +20,7 @@ class StatsCard extends StatelessWidget {
     required this.color,
     this.onTap,
     this.isLoading = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -110,39 +110,33 @@ class StatsCard extends StatelessWidget {
 // Specialized stats cards for different data types
 class OrderStatsCard extends StatsCard {
   OrderStatsCard({
-    Key? key,
+    super.key,
     required int ordersToday,
     required int ordersChange,
-    VoidCallback? onTap,
-    bool isLoading = false,
+    super.onTap,
+    super.isLoading,
   }) : super(
-    key: key,
     title: 'Orders Today',
     value: ordersToday.toString(),
     subtitle: '${ordersChange >= 0 ? '+' : ''}$ordersChange from yesterday',
     icon: AppIcons.orders,
     color: Colors.green,
-    onTap: onTap,
-    isLoading: isLoading,
   );
 }
 
 class EarningsStatsCard extends StatsCard {
   EarningsStatsCard({
-    Key? key,
+    super.key,
     required double earningsToday,
     required double earningsChange,
-    VoidCallback? onTap,
-    bool isLoading = false,
+    super.onTap,
+    super.isLoading,
   }) : super(
-    key: key,
     title: 'Earnings Today',
     value: '₹${_formatAmount(earningsToday)}',
     subtitle: '${earningsChange >= 0 ? '+' : ''}₹${_formatAmount(earningsChange)} from yesterday',
     icon: AppIcons.earnings,
     color: Colors.blue,
-    onTap: onTap,
-    isLoading: isLoading,
   );
 
   static String _formatAmount(double amount) {
@@ -155,59 +149,49 @@ class EarningsStatsCard extends StatsCard {
 
 class QueriesStatsCard extends StatsCard {
   QueriesStatsCard({
-    Key? key,
+    super.key,
     required int totalQueries,
     required int pendingQueries,
-    VoidCallback? onTap,
-    bool isLoading = false,
+    super.onTap,
+    super.isLoading,
   }) : super(
-    key: key,
     title: 'Queries',
     value: totalQueries.toString(),
     subtitle: '$pendingQueries pending',
     icon: AppIcons.queries,
     color: Colors.orange,
-    onTap: onTap,
-    isLoading: isLoading,
   );
 }
 
 class ComplaintsStatsCard extends StatsCard {
   ComplaintsStatsCard({
-    Key? key,
+    super.key,
     required int totalComplaints,
     required bool hasUrgent,
-    VoidCallback? onTap,
-    bool isLoading = false,
+    super.onTap,
+    super.isLoading,
   }) : super(
-    key: key,
     title: 'Complaints',
     value: totalComplaints.toString(),
     subtitle: hasUrgent ? 'Needs attention' : 'All resolved',
     icon: AppIcons.complaints,
     color: hasUrgent ? Colors.red : Colors.green,
-    onTap: onTap,
-    isLoading: isLoading,
   );
 }
 
 // Engagement stats card for story analytics
 class EngagementStatsCard extends StatsCard {
   EngagementStatsCard({
-    Key? key,
+    super.key,
     required String type,
     required int value,
-    required IconData icon,
-    required Color color,
-    VoidCallback? onTap,
+    required super.icon,
+    required super.color,
+    super.onTap,
   }) : super(
-    key: key,
     title: type,
     value: value.toString(),
     subtitle: 'Total $type',
-    icon: icon,
-    color: color,
-    onTap: onTap,
   );
 
   factory EngagementStatsCard.views({

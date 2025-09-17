@@ -12,14 +12,14 @@ class ServiceItemCard extends StatelessWidget {
   final bool isCompact;
 
   const ServiceItemCard({
-    Key? key,
+    super.key,
     required this.service,
     this.onTap,
     this.onEdit,
     this.onToggleStatus,
     this.showActions = false,
     this.isCompact = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -247,30 +247,22 @@ class ServiceItemCard extends StatelessWidget {
 // Specialized service cards for different layouts
 class ServiceSummaryCard extends ServiceItemCard {
   const ServiceSummaryCard({
-    Key? key,
-    required BusinessService service,
-    VoidCallback? onTap,
+    super.key,
+    required super.service,
+    super.onTap,
   }) : super(
-    key: key,
-    service: service,
-    onTap: onTap,
     isCompact: true,
   );
 }
 
 class ServiceManagementCard extends ServiceItemCard {
   const ServiceManagementCard({
-    Key? key,
-    required BusinessService service,
-    VoidCallback? onTap,
-    VoidCallback? onEdit,
-    VoidCallback? onToggleStatus,
+    super.key,
+    required super.service,
+    super.onTap,
+    super.onEdit,
+    super.onToggleStatus,
   }) : super(
-    key: key,
-    service: service,
-    onTap: onTap,
-    onEdit: onEdit,
-    onToggleStatus: onToggleStatus,
     showActions: true,
     isCompact: false,
   );

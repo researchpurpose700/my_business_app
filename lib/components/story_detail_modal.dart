@@ -12,10 +12,10 @@ class StoryDetailsModal extends StatefulWidget {
   final Function(Story)? onStoryUpdated;
 
   const StoryDetailsModal({
-    Key? key,
+    super.key,
     required this.story,
     this.onStoryUpdated,
-  }) : super(key: key);
+  });
 
   @override
   State<StoryDetailsModal> createState() => _StoryDetailsModalState();
@@ -28,7 +28,7 @@ class _StoryDetailsModalState extends State<StoryDetailsModal>
   final AnalyticsService _analyticsService = AnalyticsService();
 
   late TabController _tabController;
-  bool _isLoading = false;
+  final bool _isLoading = false;
   bool _isAddingComment = false;
 
   @override

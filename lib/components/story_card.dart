@@ -11,13 +11,13 @@ class StoryCard extends StatelessWidget {
   final bool isCurrentUser;
 
   const StoryCard({
-    Key? key,
+    super.key,
     required this.story,
     this.onTap,
     this.onCreateStory,
     this.userName = 'Your Story',
     this.isCurrentUser = true,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -207,11 +207,11 @@ class SimpleStoryCard extends StatelessWidget {
   final bool showStats;
 
   const SimpleStoryCard({
-    Key? key,
+    super.key,
     required this.story,
     this.onTap,
     this.showStats = true,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -385,9 +385,9 @@ class CreateStoryCard extends StatelessWidget {
   final VoidCallback? onTap;
 
   const CreateStoryCard({
-    Key? key,
+    super.key,
     this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

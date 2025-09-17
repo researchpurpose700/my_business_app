@@ -14,10 +14,10 @@ class BusinessRegistrationPage extends StatefulWidget {
   final VoidCallback? onSwitchToLogin;
 
   const BusinessRegistrationPage({
-    Key? key,
+    super.key,
     required this.onFinished,
     this.onSwitchToLogin,
-  }) : super(key: key);
+  });
 
   @override
   State<BusinessRegistrationPage> createState() => _BusinessRegistrationPageState();

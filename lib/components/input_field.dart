@@ -26,7 +26,7 @@ class CustomInputField extends StatelessWidget {
   final double? borderRadius;
 
   const CustomInputField({
-    Key? key,
+    super.key,
     required this.controller,
     required this.labelText,
     this.validator,
@@ -46,7 +46,7 @@ class CustomInputField extends StatelessWidget {
     this.borderColor,
     this.focusedBorderColor,
     this.borderRadius,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -447,7 +447,7 @@ class ListingDropdown extends StatelessWidget {
     final isRequired = ListingConstants.isFieldRequired(fieldKey, listingType);
 
     return DropdownButtonFormField<String>(
-      value: value,
+      initialValue: value,
       items: items.map((item) => DropdownMenuItem(
         value: item,
         child: Text(item),
@@ -481,7 +481,7 @@ class ListingTypeSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DropdownButtonFormField<String>(
-      value: selectedType,
+      initialValue: selectedType,
       items: ListingConstants.listingTypes.map((type) =>
           DropdownMenuItem(
             value: type,

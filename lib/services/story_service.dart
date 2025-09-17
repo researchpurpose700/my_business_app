@@ -74,7 +74,7 @@ class StoryService extends ChangeNotifier {
   }
 
   Story? _currentStory;
-  List<Story> _allStories = [];
+  final List<Story> _allStories = [];
   bool _isLoading = false;
 
   // Getters

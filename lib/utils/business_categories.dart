@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../core/language/generated/app_localizations.dart';
 
 class BusinessCategories {
   // Static list of business categories

@@ -11,9 +11,9 @@ class CreateStoryModal extends StatefulWidget {
   final Function(Story)? onStoryCreated;
 
   const CreateStoryModal({
-    Key? key,
+    super.key,
     this.onStoryCreated,
-  }) : super(key: key);
+  });
 
   @override
   State<CreateStoryModal> createState() => _CreateStoryModalState();
@@ -424,9 +424,9 @@ class CameraPage extends StatelessWidget {
   final CameraService cameraService;
 
   const CameraPage({
-    Key? key,
+    super.key,
     required this.cameraService,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -13,23 +13,23 @@ class AppException implements Exception {
 }
 
 class NetworkException extends AppException {
-  NetworkException(String message) : super(message, code: 'NETWORK_ERROR');
+  NetworkException(super.message) : super(code: 'NETWORK_ERROR');
 }
 
 class ValidationException extends AppException {
-  ValidationException(String message) : super(message, code: 'VALIDATION_ERROR');
+  ValidationException(super.message) : super(code: 'VALIDATION_ERROR');
 }
 
 class PermissionException extends AppException {
-  PermissionException(String message) : super(message, code: 'PERMISSION_ERROR');
+  PermissionException(super.message) : super(code: 'PERMISSION_ERROR');
 }
 
 class StorageException extends AppException {
-  StorageException(String message) : super(message, code: 'STORAGE_ERROR');
+  StorageException(super.message) : super(code: 'STORAGE_ERROR');
 }
 
 class CameraException extends AppException {
-  CameraException(String message) : super(message, code: 'CAMERA_ERROR');
+  CameraException(super.message) : super(code: 'CAMERA_ERROR');
 }
 
 // Error Handler Class
